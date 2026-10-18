@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -83,6 +82,30 @@ fun parseHexColor(hex: String, defaultColor: Color = Color.Gray): Color {
     }
 }
 
+@Composable
+fun WatchWatermarkBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        // Luxury subtle watch watermark in background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Watch,
+                contentDescription = null,
+                modifier = Modifier.size(280.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.035f)
+            )
+        }
+        content()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyWatchesScreen(
@@ -116,51 +139,53 @@ fun MyWatchesScreen(
             }
         }
     ) { innerPadding ->
-        Box(
+        WatchWatermarkBackground(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (watches.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Watch,
-                        contentDescription = null,
-                        modifier = Modifier.size(72.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Henüz kayıtlı saatiniz yok",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Sağ alttaki '+' butonuna basarak ilk saatinizi ekleyin.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(watches, key = { it.id }) { watch ->
-                        WatchCard(
-                            watch = watch,
-                            onDeleteClick = { watchToDelete = watch }
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (watches.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Watch,
+                            contentDescription = null,
+                            modifier = Modifier.size(72.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Henüz kayıtlı saatiniz yok",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Sağ alttaki '+' butonuna basarak ilk saatinizi ekleyin.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(watches, key = { it.id }) { watch ->
+                            WatchCard(
+                                watch = watch,
+                                onDeleteClick = { watchToDelete = watch }
+                            )
+                        }
                     }
                 }
             }
@@ -211,7 +236,7 @@ fun WatchCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
