@@ -13,5 +13,6 @@ data class WatchEntity(
     val category: String = "Diver",          // Diver, Dress, Spor, Pilot vb.
     val productionYear: String = "",         // Yapım Yılı (Örn: 2023)
     val movementType: String = "Otomatik",   // Otomatik, Quartz, Kurmalı
-    val movementModel: String = ""           // Mekanizma Modeli (Örn: NH35, ETA 2824)
+    val movementModel: String = "",          // Mekanizma Modeli (Örn: NH35, ETA 2824)
+    val photoUri: String = ""                // Saat Fotoğrafı URI
 )

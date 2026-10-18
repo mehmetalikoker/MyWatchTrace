@@ -1,5 +1,8 @@
 package com.example.mywatchtrace.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
@@ -53,10 +57,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
@@ -91,7 +97,6 @@ fun WatchWatermarkBackground(
     content: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // Luxury watch dial watermark in background
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -198,8 +203,8 @@ fun MyWatchesScreen(
     if (showAddDialog) {
         AddWatchDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel ->
-                viewModel.addWatch(brand, model, colorHex, category, productionYear, movementType, movementModel)
+            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri ->
+                viewModel.addWatch(brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri)
                 showAddDialog = false
             }
         )
@@ -239,97 +244,126 @@ fun WatchCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Watch photo thumbnail or color badge
+            if (watch.photoUri.isNotBlank()) {
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(64.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    AsyncImage(
+                        model = watch.photoUri,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(watchColor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(20.dp)
                             .clip(CircleShape)
                             .background(watchColor)
                     )
-                    Text(
-                        text = watch.category.ifBlank { "Diver" },
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    if (watch.productionYear.isNotBlank()) {
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
-                            text = "• ${watch.productionYear}",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = watch.category.ifBlank { "Diver" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (watch.productionYear.isNotBlank()) {
+                            Text(
+                                text = "• ${watch.productionYear}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Sil",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
-                IconButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Sil",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.height(2.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = watch.brand,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = watch.model,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
                 Text(
-                    text = "Mekanizma: ${watch.movementType}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = watch.brand,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
                 )
-                if (watch.movementModel.isNotBlank()) {
+
+                Text(
+                    text = watch.model,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Text(
-                        text = "Kalibre: ${watch.movementModel}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        text = watch.movementType,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (watch.movementModel.isNotBlank()) {
+                        Text(
+                            text = watch.movementModel,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -339,7 +373,7 @@ fun WatchCard(
 @Composable
 fun AddWatchDialog(
     onDismiss: () -> Unit,
-    onConfirm: (brand: String, model: String, colorHex: String, category: String, productionYear: String, movementType: String, movementModel: String) -> Unit
+    onConfirm: (brand: String, model: String, colorHex: String, category: String, productionYear: String, movementType: String, movementModel: String, photoUri: String) -> Unit
 ) {
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
@@ -348,14 +382,23 @@ fun AddWatchDialog(
     var selectedMovementType by remember { mutableStateOf("Otomatik") }
     var movementModel by remember { mutableStateOf("") }
     var selectedColorHex by remember { mutableStateOf(PREDEFINED_COLORS.first()) }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
     var isError by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            photoUri = uri
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Yeni Saat Ekle", fontWeight = FontWeight.Bold) },
         text = {
             Box(modifier = Modifier.fillMaxWidth()) {
-                // Subtle dial background watermark inside dialog
+                // Subtle watermark inside dialog
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -374,8 +417,54 @@ fun AddWatchDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Photo Picker at the very top
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (photoUri != null) {
+                            AsyncImage(
+                                model = photoUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddAPhoto,
+                                    contentDescription = "Fotoğraf Ekle",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Fotoğraf Ekle",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
                     OutlinedTextField(
                         value = brand,
                         onValueChange = {
@@ -401,17 +490,20 @@ fun AddWatchDialog(
                     )
 
                     // Category Selection
-                    Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(WATCH_CATEGORIES) { cat ->
-                            FilterChip(
-                                selected = cat == selectedCategory,
-                                onClick = { selectedCategory = cat },
-                                label = { Text(cat) }
-                            )
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(WATCH_CATEGORIES) { cat ->
+                                FilterChip(
+                                    selected = cat == selectedCategory,
+                                    onClick = { selectedCategory = cat },
+                                    label = { Text(cat) }
+                                )
+                            }
                         }
                     }
 
@@ -425,17 +517,20 @@ fun AddWatchDialog(
                     )
 
                     // Movement Type Selection
-                    Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(MOVEMENT_TYPES) { mov ->
-                            FilterChip(
-                                selected = mov == selectedMovementType,
-                                onClick = { selectedMovementType = mov },
-                                label = { Text(mov) }
-                            )
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(MOVEMENT_TYPES) { mov ->
+                                FilterChip(
+                                    selected = mov == selectedMovementType,
+                                    onClick = { selectedMovementType = mov },
+                                    label = { Text(mov) }
+                                )
+                            }
                         }
                     }
 
@@ -448,33 +543,35 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text(
-                        text = "Etiket / Takvim Rengi:",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = "Etiket / Takvim Rengi:",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(PREDEFINED_COLORS) { hex ->
+                                val color = parseHexColor(hex)
+                                val isSelected = hex == selectedColorHex
 
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(PREDEFINED_COLORS) { hex ->
-                            val color = parseHexColor(hex)
-                            val isSelected = hex == selectedColorHex
-
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .border(
-                                        width = if (isSelected) 3.dp else 0.dp,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                        shape = CircleShape
-                                    )
-                                    .clickable { selectedColorHex = hex }
-                            )
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 0.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { selectedColorHex = hex }
+                                )
+                            }
                         }
                     }
                 }
@@ -493,7 +590,8 @@ fun AddWatchDialog(
                             selectedCategory,
                             productionYear,
                             selectedMovementType,
-                            movementModel
+                            movementModel,
+                            photoUri?.toString() ?: ""
                         )
                     }
                 }

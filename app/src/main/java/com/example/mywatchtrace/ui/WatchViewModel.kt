@@ -79,7 +79,8 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         category: String,
         productionYear: String,
         movementType: String,
-        movementModel: String
+        movementModel: String,
+        photoUri: String
     ) {
         viewModelScope.launch {
             repository.addWatch(
@@ -90,7 +91,8 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
                     category = category.trim(),
                     productionYear = productionYear.trim(),
                     movementType = movementType.trim(),
-                    movementModel = movementModel.trim()
+                    movementModel = movementModel.trim(),
+                    photoUri = photoUri.trim()
                 )
             )
         }
