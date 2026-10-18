@@ -72,13 +72,25 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         _selectedYearMonth.value = yearMonth
     }
 
-    fun addWatch(brand: String, model: String, colorHex: String) {
+    fun addWatch(
+        brand: String,
+        model: String,
+        colorHex: String,
+        category: String,
+        productionYear: String,
+        movementType: String,
+        movementModel: String
+    ) {
         viewModelScope.launch {
             repository.addWatch(
                 WatchEntity(
                     brand = brand.trim(),
                     model = model.trim(),
-                    colorHex = colorHex
+                    colorHex = colorHex,
+                    category = category.trim(),
+                    productionYear = productionYear.trim(),
+                    movementType = movementType.trim(),
+                    movementModel = movementModel.trim()
                 )
             )
         }

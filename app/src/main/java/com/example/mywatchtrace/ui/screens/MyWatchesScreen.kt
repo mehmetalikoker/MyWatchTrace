@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -28,6 +32,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +71,9 @@ val PREDEFINED_COLORS = listOf(
     "#E91E63", // Pembe
     "#795548"  // Kahverengi
 )
+
+val WATCH_CATEGORIES = listOf("Diver", "Dress", "Spor", "Pilot")
+val MOVEMENT_TYPES = listOf("Otomatik", "Quartz", "Kurmalı")
 
 fun parseHexColor(hex: String, defaultColor: Color = Color.Gray): Color {
     return try {
@@ -142,11 +150,10 @@ fun MyWatchesScreen(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(1),
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(watches, key = { it.id }) { watch ->
@@ -163,8 +170,8 @@ fun MyWatchesScreen(
     if (showAddDialog) {
         AddWatchDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { brand, model, colorHex ->
-                viewModel.addWatch(brand, model, colorHex)
+            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel ->
+                viewModel.addWatch(brand, model, colorHex, category, productionYear, movementType, movementModel)
                 showAddDialog = false
             }
         )
@@ -219,12 +226,30 @@ fun WatchCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clip(CircleShape)
-                        .background(watchColor)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(watchColor)
+                    )
+                    Text(
+                        text = watch.category.ifBlank { "Diver" },
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (watch.productionYear.isNotBlank()) {
+                        Text(
+                            text = "• ${watch.productionYear}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 IconButton(
                     onClick = onDeleteClick,
@@ -239,11 +264,11 @@ fun WatchCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = watch.brand,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
@@ -253,11 +278,32 @@ fun WatchCard(
 
             Text(
                 text = watch.model,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Mekanizma: ${watch.movementType}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (watch.movementModel.isNotBlank()) {
+                    Text(
+                        text = "Kalibre: ${watch.movementModel}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
     }
 }
@@ -265,10 +311,14 @@ fun WatchCard(
 @Composable
 fun AddWatchDialog(
     onDismiss: () -> Unit,
-    onConfirm: (brand: String, model: String, colorHex: String) -> Unit
+    onConfirm: (brand: String, model: String, colorHex: String, category: String, productionYear: String, movementType: String, movementModel: String) -> Unit
 ) {
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Diver") }
+    var productionYear by remember { mutableStateOf("") }
+    var selectedMovementType by remember { mutableStateOf("Otomatik") }
+    var movementModel by remember { mutableStateOf("") }
     var selectedColorHex by remember { mutableStateOf(PREDEFINED_COLORS.first()) }
     var isError by remember { mutableStateOf(false) }
 
@@ -277,8 +327,10 @@ fun AddWatchDialog(
         title = { Text("Yeni Saat Ekle", fontWeight = FontWeight.Bold) },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(
                     value = brand,
@@ -304,11 +356,59 @@ fun AddWatchDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Category Selection
+                Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(WATCH_CATEGORIES) { cat ->
+                        FilterChip(
+                            selected = cat == selectedCategory,
+                            onClick = { selectedCategory = cat },
+                            label = { Text(cat) }
+                        )
+                    }
+                }
+
+                // Production Year
+                OutlinedTextField(
+                    value = productionYear,
+                    onValueChange = { productionYear = it },
+                    label = { Text("Yapım Yılı (Örn: 2023)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Movement Type Selection
+                Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(MOVEMENT_TYPES) { mov ->
+                        FilterChip(
+                            selected = mov == selectedMovementType,
+                            onClick = { selectedMovementType = mov },
+                            label = { Text(mov) }
+                        )
+                    }
+                }
+
+                // Movement Model
+                OutlinedTextField(
+                    value = movementModel,
+                    onValueChange = { movementModel = it },
+                    label = { Text("Mekanizma Modeli / Kalibre (Örn: NH35)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Text(
                     text = "Etiket / Takvim Rengi:",
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 2.dp)
                 )
 
                 LazyRow(
@@ -321,7 +421,7 @@ fun AddWatchDialog(
 
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(32.dp)
                                 .clip(CircleShape)
                                 .background(color)
                                 .border(
@@ -341,7 +441,15 @@ fun AddWatchDialog(
                     if (brand.isBlank() || model.isBlank()) {
                         isError = true
                     } else {
-                        onConfirm(brand, model, selectedColorHex)
+                        onConfirm(
+                            brand,
+                            model,
+                            selectedColorHex,
+                            selectedCategory,
+                            productionYear,
+                            selectedMovementType,
+                            movementModel
+                        )
                     }
                 }
             ) {

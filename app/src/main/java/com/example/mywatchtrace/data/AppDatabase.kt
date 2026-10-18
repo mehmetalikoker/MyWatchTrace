@@ -8,7 +8,7 @@ import com.example.mywatchtrace.data.dao.WatchDao
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogEntity
 
-@Database(entities = [WatchEntity::class, WearLogEntity::class], version = 1, exportSchema = false)
+@Database(entities = [WatchEntity::class, WearLogEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun watchDao(): WatchDao
