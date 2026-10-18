@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+
+  <!-- Outer Bezel Ring -->
+  <path
+      android:strokeColor="#000000"
+      android:strokeWidth="4"
+      android:fillColor="#00000000"
+      android:pathData="M120,10 A110,110 0,1 1 119.9,10 Z"/>
+
+  <!-- Inner Dial Circle -->
+  <path
+      android:strokeColor="#000000"
+      android:strokeWidth="1.5"
+      android:fillColor="#00000000"
+      android:pathData="M120,25 A95,95 0,1 1 119.9,25 Z"/>
+
+  <!-- Hour Markers -->
+  <path android:fillColor="#000000" android:pathData="M117,28 H123 V42 H117 Z"/>
+  <path android:fillColor="#000000" android:pathData="M198,117 H212 V123 H198 Z"/>
+  <path android:fillColor="#000000" android:pathData="M117,198 H123 V212 H117 Z"/>
+  <path android:fillColor="#000000" android:pathData="M28,117 H42 V123 H28 Z"/>
+
+  <!-- Center Pin -->
+  <path android:fillColor="#000000" android:pathData="M114,120 A6,6 0,1 1 126,120 A6,6 0,1 1 114,120 Z"/>
+
+  <!-- Watch Hands -->
+  <path android:strokeColor="#000000" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M120,120 L90,85"/>
+  <path android:strokeColor="#000000" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M120,120 L160,70"/>
+  <path android:strokeColor="#000000" android:strokeWidth="1" android:pathData="M120,135 L120,50"/>
+</vector>

@@ -1,5 +1,6 @@
 package com.example.mywatchtrace.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,9 +53,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
 
@@ -88,18 +91,18 @@ fun WatchWatermarkBackground(
     content: @Composable () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // Luxury subtle watch watermark in background
+        // Luxury watch dial watermark in background
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(32.dp),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Watch,
+            Image(
+                painter = painterResource(id = R.drawable.watch_dial_bg),
                 contentDescription = null,
-                modifier = Modifier.size(280.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.035f)
+                modifier = Modifier.size(320.dp),
+                alpha = 0.07f
             )
         }
         content()
@@ -351,111 +354,128 @@ fun AddWatchDialog(
         onDismissRequest = onDismiss,
         title = { Text("Yeni Saat Ekle", fontWeight = FontWeight.Bold) },
         text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = {
-                        brand = it
-                        if (isError) isError = false
-                    },
-                    label = { Text("Marka (Örn: Oris)") },
-                    singleLine = true,
-                    isError = isError && brand.isBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = {
-                        model = it
-                        if (isError) isError = false
-                    },
-                    label = { Text("Model (Örn: Aquis)") },
-                    singleLine = true,
-                    isError = isError && model.isBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Category Selection
-                Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+            Box(modifier = Modifier.fillMaxWidth()) {
+                // Subtle dial background watermark inside dialog
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(WATCH_CATEGORIES) { cat ->
-                        FilterChip(
-                            selected = cat == selectedCategory,
-                            onClick = { selectedCategory = cat },
-                            label = { Text(cat) }
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.watch_dial_bg),
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp),
+                        alpha = 0.05f
+                    )
                 }
 
-                // Production Year
-                OutlinedTextField(
-                    value = productionYear,
-                    onValueChange = { productionYear = it },
-                    label = { Text("Yapım Yılı (Örn: 2023)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Movement Type Selection
-                Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(MOVEMENT_TYPES) { mov ->
-                        FilterChip(
-                            selected = mov == selectedMovementType,
-                            onClick = { selectedMovementType = mov },
-                            label = { Text(mov) }
-                        )
+                    OutlinedTextField(
+                        value = brand,
+                        onValueChange = {
+                            brand = it
+                            if (isError) isError = false
+                        },
+                        label = { Text("Marka (Örn: Oris)") },
+                        singleLine = true,
+                        isError = isError && brand.isBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = {
+                            model = it
+                            if (isError) isError = false
+                        },
+                        label = { Text("Model (Örn: Aquis)") },
+                        singleLine = true,
+                        isError = isError && model.isBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Category Selection
+                    Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(WATCH_CATEGORIES) { cat ->
+                            FilterChip(
+                                selected = cat == selectedCategory,
+                                onClick = { selectedCategory = cat },
+                                label = { Text(cat) }
+                            )
+                        }
                     }
-                }
 
-                // Movement Model
-                OutlinedTextField(
-                    value = movementModel,
-                    onValueChange = { movementModel = it },
-                    label = { Text("Mekanizma Modeli / Kalibre (Örn: NH35)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    // Production Year
+                    OutlinedTextField(
+                        value = productionYear,
+                        onValueChange = { productionYear = it },
+                        label = { Text("Yapım Yılı (Örn: 2023)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Text(
-                    text = "Etiket / Takvim Rengi:",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+                    // Movement Type Selection
+                    Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(MOVEMENT_TYPES) { mov ->
+                            FilterChip(
+                                selected = mov == selectedMovementType,
+                                onClick = { selectedMovementType = mov },
+                                label = { Text(mov) }
+                            )
+                        }
+                    }
 
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(PREDEFINED_COLORS) { hex ->
-                        val color = parseHexColor(hex)
-                        val isSelected = hex == selectedColorHex
+                    // Movement Model
+                    OutlinedTextField(
+                        value = movementModel,
+                        onValueChange = { movementModel = it },
+                        label = { Text("Mekanizma Modeli / Kalibre (Örn: NH35)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .border(
-                                    width = if (isSelected) 3.dp else 0.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    shape = CircleShape
-                                )
-                                .clickable { selectedColorHex = hex }
-                        )
+                    Text(
+                        text = "Etiket / Takvim Rengi:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(PREDEFINED_COLORS) { hex ->
+                            val color = parseHexColor(hex)
+                            val isSelected = hex == selectedColorHex
+
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .border(
+                                        width = if (isSelected) 3.dp else 0.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { selectedColorHex = hex }
+                            )
+                        }
                     }
                 }
             }
