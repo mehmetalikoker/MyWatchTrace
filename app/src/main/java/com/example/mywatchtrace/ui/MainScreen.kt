@@ -28,9 +28,9 @@ sealed class BottomNavItem(
     val title: String,
     val icon: ImageVector
 ) {
-    data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
-    data object DailyLog : BottomNavItem("daily_log", "Günlük Kayıt", Icons.Default.Today)
     data object MyWatches : BottomNavItem("my_watches", "Saatlerim", Icons.Default.Watch)
+    data object DailyLog : BottomNavItem("daily_log", "Günlük Kayıt", Icons.Default.Today)
+    data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
 }
 
 @Composable
@@ -39,9 +39,9 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val items = listOf(
-        BottomNavItem.Calendar,
+        BottomNavItem.MyWatches,
         BottomNavItem.DailyLog,
-        BottomNavItem.MyWatches
+        BottomNavItem.Calendar
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -73,7 +73,7 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Calendar.route,
+            startDestination = BottomNavItem.MyWatches.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Calendar.route) {
