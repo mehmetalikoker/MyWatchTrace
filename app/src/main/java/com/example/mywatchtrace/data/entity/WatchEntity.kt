@@ -16,14 +16,13 @@ data class WatchEntity(
     val movementModel: String = "",          // Mekanizma Modeli (Örn: NH35, ETA 2824)
     val photoUri: String = "",               // Saat Fotoğrafı URI
     
-    // Yeni Eklenen Alanlar
     val hasBox: Boolean = false,             // Kutu var mı? (Evet/Hayır)
     val hasPapers: Boolean = false,          // Belge var mı? (Evet/Hayır)
+    val serialNumber: String = "",           // Seri No (Belge: Evet ise gösterilir, opsiyonel)
     val price: String = "",                  // Saat Fiyatı
     val currency: String = "TL",             // Para Birimi (TL, USD, EUR, CHF)
     val status: String = "Aktif",            // Durumu (Aktif, Satıldı)
     
-    // Satıldı ise ek 4 alan
     val soldPrice: String = "",              // Kaça satıldı?
     val soldCurrency: String = "TL",         // Satış Para Birimi
     val soldDate: String = "",               // Hangi tarihte satıldı?

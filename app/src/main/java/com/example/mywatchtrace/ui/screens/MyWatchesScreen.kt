@@ -98,7 +98,6 @@ fun parseHexColor(hex: String, defaultColor: Color = Color.Gray): Color {
     }
 }
 
-// Helper to copy selected image URI to app's internal storage for permanent persistence
 fun saveUriToInternalStorage(context: Context, uri: Uri): String {
     return try {
         val inputStream = context.contentResolver.openInputStream(uri)
@@ -228,7 +227,7 @@ fun MyWatchesScreen(
     if (showAddDialog) {
         AddWatchDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri, hasBox, hasPapers, price, currency, status, soldPrice, soldCurrency, soldDate, soldTo ->
+            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri, hasBox, hasPapers, serialNumber, price, currency, status, soldPrice, soldCurrency, soldDate, soldTo ->
                 viewModel.addWatch(
                     brand = brand,
                     model = model,
@@ -240,6 +239,7 @@ fun MyWatchesScreen(
                     photoUri = photoUri,
                     hasBox = hasBox,
                     hasPapers = hasPapers,
+                    serialNumber = serialNumber,
                     price = price,
                     currency = currency,
                     status = status,
@@ -270,6 +270,7 @@ fun MyWatchesScreen(
                     photoUri = updatedWatch.photoUri,
                     hasBox = updatedWatch.hasBox,
                     hasPapers = updatedWatch.hasPapers,
+                    serialNumber = updatedWatch.serialNumber,
                     price = updatedWatch.price,
                     currency = updatedWatch.currency,
                     status = updatedWatch.status,
@@ -432,6 +433,9 @@ fun DetailedWatchCard(
             ) {
                 DetailRow("Mekanizma", "${watch.movementType} (${watch.movementModel})")
                 DetailRow("Kutu & Belge", "Kutu: ${if (watch.hasBox) "Var" else "Yok"} | Belge: ${if (watch.hasPapers) "Var" else "Yok"}")
+                if (watch.hasPapers && watch.serialNumber.isNotBlank()) {
+                    DetailRow("Seri No", watch.serialNumber)
+                }
                 DetailRow("Alış Fiyatı", "${watch.price} ${watch.currency}")
                 DetailRow("Durumu", watch.status)
                 if (isSold) {
@@ -456,6 +460,7 @@ fun AddWatchDialog(
         photoUri: String,
         hasBox: Boolean,
         hasPapers: Boolean,
+        serialNumber: String,
         price: String,
         currency: String,
         status: String,
@@ -478,6 +483,7 @@ fun AddWatchDialog(
 
     var hasBox by remember { mutableStateOf(false) }
     var hasPapers by remember { mutableStateOf(false) }
+    var serialNumber by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var selectedCurrency by remember { mutableStateOf("TL") }
     var selectedStatus by remember { mutableStateOf("Aktif") }
@@ -526,7 +532,6 @@ fun AddWatchDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Photo Picker at the very top
                     Box(
                         modifier = Modifier
                             .size(90.dp)
@@ -673,10 +678,23 @@ fun AddWatchDialog(
                             )
                             FilterChip(
                                 selected = !hasPapers,
-                                onClick = { hasPapers = false },
+                                onClick = { 
+                                    hasPapers = false 
+                                    serialNumber = ""
+                                },
                                 label = { Text("Hayır") }
                             )
                         }
+                    }
+
+                    if (hasPapers) {
+                        OutlinedTextField(
+                            value = serialNumber,
+                            onValueChange = { serialNumber = it },
+                            label = { Text("Seri Numarası (Opsiyonel)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     OutlinedTextField(
@@ -794,6 +812,7 @@ fun AddWatchDialog(
                             photoUriString,
                             hasBox,
                             hasPapers,
+                            serialNumber,
                             price,
                             selectedCurrency,
                             selectedStatus,
@@ -834,6 +853,7 @@ fun EditWatchDialog(
 
     var hasBox by remember { mutableStateOf(watch.hasBox) }
     var hasPapers by remember { mutableStateOf(watch.hasPapers) }
+    var serialNumber by remember { mutableStateOf(watch.serialNumber) }
     var price by remember { mutableStateOf(watch.price) }
     var selectedCurrency by remember { mutableStateOf(watch.currency) }
     var selectedStatus by remember { mutableStateOf(watch.status) }
@@ -983,8 +1003,25 @@ fun EditWatchDialog(
                         Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilterChip(selected = hasPapers, onClick = { hasPapers = true }, label = { Text("Evet") })
-                            FilterChip(selected = !hasPapers, onClick = { hasPapers = false }, label = { Text("Hayır") })
+                            FilterChip(
+                                selected = !hasPapers,
+                                onClick = { 
+                                    hasPapers = false
+                                    serialNumber = ""
+                                },
+                                label = { Text("Hayır") }
+                            )
                         }
+                    }
+
+                    if (hasPapers) {
+                        OutlinedTextField(
+                            value = serialNumber,
+                            onValueChange = { serialNumber = it },
+                            label = { Text("Seri Numarası (Opsiyonel)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     OutlinedTextField(
@@ -1069,6 +1106,7 @@ fun EditWatchDialog(
                             photoUri = photoUriString,
                             hasBox = hasBox,
                             hasPapers = hasPapers,
+                            serialNumber = serialNumber,
                             price = price,
                             currency = selectedCurrency,
                             status = selectedStatus,
