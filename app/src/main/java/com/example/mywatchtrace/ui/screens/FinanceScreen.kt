@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,11 +48,6 @@ fun FinanceScreen(
     val activeInvestments = activeWatches
         .groupBy { it.currency.ifBlank { "TL" } }
         .mapValues { entry -> entry.value.sumOf { it.price.toDoubleOrNull() ?: 0.0 } }
-
-    // Group sold revenues by currency
-    val soldRevenues = soldWatches
-        .groupBy { it.soldCurrency.ifBlank { "TL" } }
-        .mapValues { entry -> entry.value.sumOf { it.soldPrice.toDoubleOrNull() ?: 0.0 } }
 
     val totalActiveCount = activeWatches.size
     val totalSoldCount = soldWatches.size
@@ -103,7 +97,7 @@ fun FinanceScreen(
                 )
 
                 Text(
-                    text = "Aktif koleksiyonunuzun maliyeti ve satılan saatlerinizin finansal dökümü.",
+                    text = "Aktif koleksiyonunuzun maliyet ve portföy özeti.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -185,46 +179,6 @@ fun FinanceScreen(
                                 ) {
                                     Text(text = "Toplam ($currency):", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(text = "%.2f %s".format(totalAmount, currency), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Sold Watches Revenue by Currency
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(imageVector = Icons.Default.AttachMoney, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Text(
-                                text = "Satış Gelirleri",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        if (soldRevenues.isEmpty()) {
-                            Text(text = "Satılan saat bulunmuyor.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        } else {
-                            soldRevenues.forEach { (currency, totalAmount) ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(text = "Satış Geliri ($currency):", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(text = "%.2f %s".format(totalAmount, currency), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
