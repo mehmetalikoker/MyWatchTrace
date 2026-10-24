@@ -3,6 +3,7 @@ package com.example.mywatchtrace.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,7 +32,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +39,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -57,13 +56,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
+
+val COLLECTION_CURRENCIES = listOf("TL", "USD", "EUR", "CHF")
+val COLLECTION_STATUS_OPTIONS = listOf("Aktif", "Satıldı")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,6 +195,19 @@ fun WatchCollectionScreen(
 }
 
 @Composable
+fun DetailRow(label: String, value: String) {
+    if (value.isNotBlank() && value != " ()") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(text = value, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
 fun DetailedWatchCard(
     watch: WatchEntity,
     onEditClick: () -> Unit,
@@ -290,7 +307,6 @@ fun DetailedWatchCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Detailed information rows
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -314,19 +330,6 @@ fun DetailedWatchCard(
 }
 
 @Composable
-fun DetailRow(label: String, value: String) {
-    if (value.isNotBlank() && value != " ()") {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
-            Text(text = value, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
 fun EditWatchDialog(
     watch: WatchEntity,
     onDismiss: () -> Unit,
@@ -338,7 +341,6 @@ fun EditWatchDialog(
     var productionYear by remember { mutableStateOf(watch.productionYear) }
     var selectedMovementType by remember { mutableStateOf(watch.movementType) }
     var movementModel by remember { mutableStateOf(watch.movementModel) }
-    var selectedColorHex by remember { mutableStateOf(watch.colorHex) }
     var photoUri by remember { mutableStateOf<Uri?>(if (watch.photoUri.isNotBlank()) Uri.parse(watch.photoUri) else null) }
 
     var hasBox by remember { mutableStateOf(watch.hasBox) }
@@ -352,8 +354,6 @@ fun EditWatchDialog(
     var soldDate by remember { mutableStateOf(watch.soldDate) }
     var soldTo by remember { mutableStateOf(watch.soldTo) }
 
-    var isError by remember { mutableStateOf(false) }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -366,182 +366,196 @@ fun EditWatchDialog(
         onDismissRequest = onDismiss,
         title = { Text("Saati Güncelle", fontWeight = FontWeight.Bold) },
         text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
-                        .size(90.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable { imagePickerLauncher.launch("image/*") },
+                        .matchParentSize()
+                        .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (photoUri != null) {
-                        AsyncImage(
-                            model = photoUri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AddAPhoto,
-                                contentDescription = "Fotoğraf Değiştir",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.img),
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp),
+                        alpha = 0.05f
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(16.dp)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Fotoğraf", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (photoUri != null) {
+                            AsyncImage(
+                                model = photoUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddAPhoto,
+                                    contentDescription = "Fotoğraf Değiştir",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(text = "Fotoğraf", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
-                }
-
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Marka") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = { model = it },
-                    label = { Text("Model") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        items(WATCH_CATEGORIES) { cat ->
-                            FilterChip(selected = cat == selectedCategory, onClick = { selectedCategory = cat }, label = { Text(cat) })
-                        }
-                    }
-                }
-
-                OutlinedTextField(
-                    value = productionYear,
-                    onValueChange = { productionYear = it },
-                    label = { Text("Yapım Yılı") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        items(MOVEMENT_TYPES) { mov ->
-                            FilterChip(selected = mov == selectedMovementType, onClick = { selectedMovementType = mov }, label = { Text(mov) })
-                        }
-                    }
-                }
-
-                OutlinedTextField(
-                    value = movementModel,
-                    onValueChange = { movementModel = it },
-                    label = { Text("Mekanizma Modeli / Kalibre") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Box
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = hasBox, onClick = { hasBox = true }, label = { Text("Evet") })
-                        FilterChip(selected = !hasBox, onClick = { hasBox = false }, label = { Text("Hayır") })
-                    }
-                }
-
-                // Papers
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = hasPapers, onClick = { hasPapers = true }, label = { Text("Evet") })
-                        FilterChip(selected = !hasPapers, onClick = { hasPapers = false }, label = { Text("Hayır") })
-                    }
-                }
-
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = { Text("Saat Fiyatı") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        items(CURRENCIES) { curr ->
-                            FilterChip(selected = curr == selectedCurrency, onClick = { selectedCurrency = curr }, label = { Text(curr) })
-                        }
-                    }
-                }
-
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                    Text(text = "Durumu:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        items(STATUS_OPTIONS) { status ->
-                            FilterChip(selected = status == selectedStatus, onClick = { selectedStatus = status }, label = { Text(status) })
-                        }
-                    }
-                }
-
-                if (selectedStatus == "Satıldı") {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Satış Detayları", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Start))
 
                     OutlinedTextField(
-                        value = soldPrice,
-                        onValueChange = { soldPrice = it },
-                        label = { Text("Kaça satıldı?") },
+                        value = brand,
+                        onValueChange = { brand = it },
+                        label = { Text("Marka") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = { model = it },
+                        label = { Text("Model") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(WATCH_CATEGORIES) { cat ->
+                                FilterChip(selected = cat == selectedCategory, onClick = { selectedCategory = cat }, label = { Text(cat) })
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = productionYear,
+                        onValueChange = { productionYear = it },
+                        label = { Text("Yapım Yılı") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(MOVEMENT_TYPES) { mov ->
+                                FilterChip(selected = mov == selectedMovementType, onClick = { selectedMovementType = mov }, label = { Text(mov) })
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = movementModel,
+                        onValueChange = { movementModel = it },
+                        label = { Text("Mekanizma Modeli / Kalibre") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = hasBox, onClick = { hasBox = true }, label = { Text("Evet") })
+                            FilterChip(selected = !hasBox, onClick = { hasBox = false }, label = { Text("Hayır") })
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = hasPapers, onClick = { hasPapers = true }, label = { Text("Evet") })
+                            FilterChip(selected = !hasPapers, onClick = { hasPapers = false }, label = { Text("Hayır") })
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = price,
+                        onValueChange = { price = it },
+                        label = { Text("Saat Fiyatı") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                        Text(text = "Satış Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(text = "Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                            items(CURRENCIES) { curr ->
-                                FilterChip(selected = curr == selectedSoldCurrency, onClick = { selectedSoldCurrency = curr }, label = { Text(curr) })
+                            items(COLLECTION_CURRENCIES) { curr ->
+                                FilterChip(selected = curr == selectedCurrency, onClick = { selectedCurrency = curr }, label = { Text(curr) })
                             }
                         }
                     }
 
-                    OutlinedTextField(
-                        value = soldDate,
-                        onValueChange = { soldDate = it },
-                        label = { Text("Hangi tarihte satıldı?") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Durumu:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(COLLECTION_STATUS_OPTIONS) { status ->
+                                FilterChip(selected = status == selectedStatus, onClick = { selectedStatus = status }, label = { Text(status) })
+                            }
+                        }
+                    }
 
-                    OutlinedTextField(
-                        value = soldTo,
-                        onValueChange = { soldTo = it },
-                        label = { Text("Kime satıldı?") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    if (selectedStatus == "Satıldı") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "Satış Detayları", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Start))
+
+                        OutlinedTextField(
+                            value = soldPrice,
+                            onValueChange = { soldPrice = it },
+                            label = { Text("Kaça satıldı?") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                            Text(text = "Satış Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                items(COLLECTION_CURRENCIES) { curr ->
+                                    FilterChip(selected = curr == selectedSoldCurrency, onClick = { selectedSoldCurrency = curr }, label = { Text(curr) })
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = soldDate,
+                            onValueChange = { soldDate = it },
+                            label = { Text("Hangi tarihte satıldı?") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = soldTo,
+                            onValueChange = { soldTo = it },
+                            label = { Text("Kime satıldı?") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         },

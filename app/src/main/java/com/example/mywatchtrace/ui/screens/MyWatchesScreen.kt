@@ -102,16 +102,15 @@ fun WatchWatermarkBackground(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.watch_dial_bg),
+                painter = painterResource(id = R.drawable.img),
                 contentDescription = null,
-                modifier = Modifier.size(320.dp),
-                alpha = 0.07f
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.08f
             )
         }
         content()
@@ -270,7 +269,7 @@ fun WatchCard(
             containerColor = if (isSold)
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
             else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
@@ -281,7 +280,6 @@ fun WatchCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Watch photo thumbnail or color badge
             if (watch.photoUri.isNotBlank()) {
                 Card(
                     shape = RoundedCornerShape(12.dp),
@@ -399,33 +397,6 @@ fun WatchCard(
                         )
                     }
                 }
-
-                // Box & Papers badges
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Kutu: ${if (watch.hasBox) "Var" else "Yok"}",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Belge: ${if (watch.hasPapers) "Var" else "Yok"}",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (isSold && watch.soldPrice.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Satış: ${watch.soldPrice} ${watch.soldCurrency} (${watch.soldDate}) -> ${watch.soldTo}",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         }
     }
@@ -463,14 +434,12 @@ fun AddWatchDialog(
     var selectedColorHex by remember { mutableStateOf(PREDEFINED_COLORS.first()) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
 
-    // New Fields
     var hasBox by remember { mutableStateOf(false) }
     var hasPapers by remember { mutableStateOf(false) }
     var price by remember { mutableStateOf("") }
     var selectedCurrency by remember { mutableStateOf("TL") }
     var selectedStatus by remember { mutableStateOf("Aktif") }
 
-    // Sold Fields
     var soldPrice by remember { mutableStateOf("") }
     var selectedSoldCurrency by remember { mutableStateOf("TL") }
     var soldDate by remember { mutableStateOf("") }
@@ -498,9 +467,10 @@ fun AddWatchDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.watch_dial_bg),
+                        painter = painterResource(id = R.drawable.img),
                         contentDescription = null,
-                        modifier = Modifier.size(200.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
                         alpha = 0.05f
                     )
                 }
@@ -635,7 +605,7 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Kutu var mı? (Evet / Hayır)
+                    // Kutu var mı?
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -653,7 +623,7 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Belge var mı? (Evet / Hayır)
+                    // Belge var mı?
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -671,21 +641,14 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Saat Fiyatı & Para Birimi
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = price,
-                            onValueChange = { price = it },
-                            label = { Text("Saat Fiyatı") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    OutlinedTextField(
+                        value = price,
+                        onValueChange = { price = it },
+                        label = { Text("Saat Fiyatı") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -704,7 +667,6 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Durumu (Aktif, Satıldı)
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Durumu:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -722,7 +684,6 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Eğer Durumu Satıldı ise ek 4 soru
                     if (selectedStatus == "Satıldı") {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -762,7 +723,7 @@ fun AddWatchDialog(
                         OutlinedTextField(
                             value = soldDate,
                             onValueChange = { soldDate = it },
-                            label = { Text("Hangi tarihte satıldı? (Örn: 2026-07-02)") },
+                            label = { Text("Hangi tarihte satıldı?") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
