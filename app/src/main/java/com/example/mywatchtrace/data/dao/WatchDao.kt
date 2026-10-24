@@ -62,4 +62,15 @@ interface WatchDao {
         LIMIT 10
     """)
     fun getTopWornWatches(): Flow<List<WatchWearCount>>
+
+    @Query("""
+        SELECT w.id as watchId, w.brand as brand, w.model as model, w.colorHex as colorHex, w.photoUri as photoUri, COUNT(l.id) as wearCount
+        FROM watches w
+        JOIN wear_logs l ON w.id = l.watchId
+        WHERE l.date LIKE :yearMonth || '%'
+        GROUP BY w.id
+        ORDER BY wearCount DESC
+        LIMIT 5
+    """)
+    fun getTopWornWatchesForMonth(yearMonth: String): Flow<List<WatchWearCount>>
 }

@@ -28,6 +28,7 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
 
     val allWatches: StateFlow<List<WatchEntity>>
     val topWornWatches: StateFlow<List<WatchWearCount>>
+    val topWornWatchesForCurrentMonth: StateFlow<List<WatchWearCount>>
 
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
@@ -49,6 +50,15 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         topWornWatches = repository.topWornWatches.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+        topWornWatchesForCurrentMonth = _selectedYearMonth.flatMapLatest { ym ->
+            val ymString = String.format("%04d-%02d", ym.year, ym.monthValue)
+            repository.getTopWornWatchesForMonth(ymString)
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

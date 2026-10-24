@@ -14,11 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,20 +44,29 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.mywatchtrace.data.dao.WatchWearCount
 import com.example.mywatchtrace.ui.WatchViewModel
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopWatchesScreen(
     viewModel: WatchViewModel
 ) {
-    val topWatches by viewModel.topWornWatches.collectAsState()
+    val topWatchesAllTime by viewModel.topWornWatches.collectAsState()
+    val topWatchesMonth by viewModel.topWornWatchesForCurrentMonth.collectAsState()
+    val selectedYearMonth by viewModel.selectedYearMonth.collectAsState()
+
+    val turkishLocale = remember { Locale.Builder().setLanguage("tr").setRegion("TR").build() }
+    val monthTitle = remember(selectedYearMonth) {
+        selectedYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", turkishLocale))
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "En Çok Takılanlar (Top 10)",
+                        text = "İstatistikler",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -70,42 +81,68 @@ fun TopWatchesScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (topWatches.isEmpty() || topWatches.all { it.wearCount == 0 }) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section 1: Top 5 for Current Month
+                Text(
+                    text = "Bu Ayın En Çok Kullanılanları ($monthTitle - Top 5)",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                if (topWatchesMonth.isEmpty()) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Leaderboard,
-                            contentDescription = null,
-                            modifier = Modifier.size(72.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Henüz kullanım kaydı bulunmuyor",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Günlük Kayıt sekmesinden saatlerinizi taktığınız günleri işaretleyin.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Bu ay henüz kullanım kaydı bulunmuyor.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        topWatchesMonth.forEachIndexed { index, item ->
+                            TopWatchItemCard(rank = index + 1, item = item)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Section 2: Top 10 All Time
+                Text(
+                    text = "Tüm Zamanların En Çok Kullanılanları (Top 10)",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                if (topWatchesAllTime.isEmpty() || topWatchesAllTime.all { it.wearCount == 0 }) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        itemsIndexed(topWatches) { index, item ->
+                        Text(
+                            text = "Henüz tüm zamanlar için kullanım kaydı bulunmuyor.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        topWatchesAllTime.forEachIndexed { index, item ->
                             TopWatchItemCard(rank = index + 1, item = item)
                         }
                     }
@@ -141,16 +178,15 @@ fun TopWatchItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Rank number badge
                 Box(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(
                             when (rank) {
-                                1 -> Color(0xFFFFD700) // Gold
-                                2 -> Color(0xFFC0C0C0) // Silver
-                                3 -> Color(0xFFCD7F32) // Bronze
+                                1 -> Color(0xFFFFD700)
+                                2 -> Color(0xFFC0C0C0)
+                                3 -> Color(0xFFCD7F32)
                                 else -> MaterialTheme.colorScheme.primaryContainer
                             }
                         ),

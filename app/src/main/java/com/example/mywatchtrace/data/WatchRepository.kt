@@ -40,6 +40,10 @@ class WatchRepository(private val watchDao: WatchDao) {
         return watchDao.getWearLogsForMonth(yearMonth)
     }
 
+    fun getTopWornWatchesForMonth(yearMonth: String): Flow<List<WatchWearCount>> {
+        return watchDao.getTopWornWatchesForMonth(yearMonth)
+    }
+
     fun getWearCountForWatch(watchId: Long): Flow<Int> {
         return watchDao.getWearCountForWatch(watchId)
     }
