@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Leaderboard
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mywatchtrace.ui.screens.CalendarScreen
 import com.example.mywatchtrace.ui.screens.DailyLogScreen
+import com.example.mywatchtrace.ui.screens.FinanceScreen
 import com.example.mywatchtrace.ui.screens.MyWatchesScreen
 import com.example.mywatchtrace.ui.screens.TopWatchesScreen
 
@@ -34,6 +36,7 @@ sealed class BottomNavItem(
     data object TopWatches : BottomNavItem("top_watches", "İstatistik", Icons.Default.Leaderboard)
     data object DailyLog : BottomNavItem("daily_log", "Günlük Kayıt", Icons.Default.Today)
     data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
+    data object Finance : BottomNavItem("finance", "Finans", Icons.Default.Savings)
 }
 
 @Composable
@@ -45,7 +48,8 @@ fun MainScreen(
         BottomNavItem.MyWatches,
         BottomNavItem.TopWatches,
         BottomNavItem.DailyLog,
-        BottomNavItem.Calendar
+        BottomNavItem.Calendar,
+        BottomNavItem.Finance
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -102,6 +106,9 @@ fun MainScreen(
             }
             composable(BottomNavItem.MyWatches.route) {
                 MyWatchesScreen(viewModel = viewModel)
+            }
+            composable(BottomNavItem.Finance.route) {
+                FinanceScreen(viewModel = viewModel)
             }
         }
     }
