@@ -80,7 +80,16 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         productionYear: String,
         movementType: String,
         movementModel: String,
-        photoUri: String
+        photoUri: String,
+        hasBox: Boolean,
+        hasPapers: Boolean,
+        price: String,
+        currency: String,
+        status: String,
+        soldPrice: String,
+        soldCurrency: String,
+        soldDate: String,
+        soldTo: String
     ) {
         viewModelScope.launch {
             repository.addWatch(
@@ -92,7 +101,16 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
                     productionYear = productionYear.trim(),
                     movementType = movementType.trim(),
                     movementModel = movementModel.trim(),
-                    photoUri = photoUri.trim()
+                    photoUri = photoUri.trim(),
+                    hasBox = hasBox,
+                    hasPapers = hasPapers,
+                    price = price.trim(),
+                    currency = currency,
+                    status = status,
+                    soldPrice = soldPrice.trim(),
+                    soldCurrency = soldCurrency,
+                    soldDate = soldDate.trim(),
+                    soldTo = soldTo.trim()
                 )
             )
         }

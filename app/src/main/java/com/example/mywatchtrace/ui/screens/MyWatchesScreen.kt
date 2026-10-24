@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -60,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -82,6 +84,8 @@ val PREDEFINED_COLORS = listOf(
 
 val WATCH_CATEGORIES = listOf("Diver", "Dress", "Spor", "Pilot")
 val MOVEMENT_TYPES = listOf("Otomatik", "Quartz", "Kurmalı")
+val CURRENCIES = listOf("TL", "USD", "EUR", "CHF")
+val STATUS_OPTIONS = listOf("Aktif", "Satıldı")
 
 fun parseHexColor(hex: String, defaultColor: Color = Color.Gray): Color {
     return try {
@@ -203,8 +207,26 @@ fun MyWatchesScreen(
     if (showAddDialog) {
         AddWatchDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri ->
-                viewModel.addWatch(brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri)
+            onConfirm = { brand, model, colorHex, category, productionYear, movementType, movementModel, photoUri, hasBox, hasPapers, price, currency, status, soldPrice, soldCurrency, soldDate, soldTo ->
+                viewModel.addWatch(
+                    brand = brand,
+                    model = model,
+                    colorHex = colorHex,
+                    category = category,
+                    productionYear = productionYear,
+                    movementType = movementType,
+                    movementModel = movementModel,
+                    photoUri = photoUri,
+                    hasBox = hasBox,
+                    hasPapers = hasPapers,
+                    price = price,
+                    currency = currency,
+                    status = status,
+                    soldPrice = soldPrice,
+                    soldCurrency = soldCurrency,
+                    soldDate = soldDate,
+                    soldTo = soldTo
+                )
                 showAddDialog = false
             }
         )
@@ -240,11 +262,15 @@ fun WatchCard(
     onDeleteClick: () -> Unit
 ) {
     val watchColor = parseHexColor(watch.colorHex)
+    val isSold = watch.status == "Satıldı"
 
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+            containerColor = if (isSold)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
@@ -313,6 +339,14 @@ fun WatchCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        if (isSold) {
+                            Text(
+                                text = "• SATILDI",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
 
                     IconButton(
@@ -352,18 +386,45 @@ fun WatchCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = watch.movementType,
+                        text = "Mekanizma: ${watch.movementType}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (watch.movementModel.isNotBlank()) {
+                    if (watch.price.isNotBlank()) {
                         Text(
-                            text = watch.movementModel,
+                            text = "Fiyat: ${watch.price} ${watch.currency}",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
+                }
+
+                // Box & Papers badges
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Kutu: ${if (watch.hasBox) "Var" else "Yok"}",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Belge: ${if (watch.hasPapers) "Var" else "Yok"}",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (isSold && watch.soldPrice.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Satış: ${watch.soldPrice} ${watch.soldCurrency} (${watch.soldDate}) -> ${watch.soldTo}",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -373,7 +434,25 @@ fun WatchCard(
 @Composable
 fun AddWatchDialog(
     onDismiss: () -> Unit,
-    onConfirm: (brand: String, model: String, colorHex: String, category: String, productionYear: String, movementType: String, movementModel: String, photoUri: String) -> Unit
+    onConfirm: (
+        brand: String,
+        model: String,
+        colorHex: String,
+        category: String,
+        productionYear: String,
+        movementType: String,
+        movementModel: String,
+        photoUri: String,
+        hasBox: Boolean,
+        hasPapers: Boolean,
+        price: String,
+        currency: String,
+        status: String,
+        soldPrice: String,
+        soldCurrency: String,
+        soldDate: String,
+        soldTo: String
+    ) -> Unit
 ) {
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
@@ -383,6 +462,20 @@ fun AddWatchDialog(
     var movementModel by remember { mutableStateOf("") }
     var selectedColorHex by remember { mutableStateOf(PREDEFINED_COLORS.first()) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // New Fields
+    var hasBox by remember { mutableStateOf(false) }
+    var hasPapers by remember { mutableStateOf(false) }
+    var price by remember { mutableStateOf("") }
+    var selectedCurrency by remember { mutableStateOf("TL") }
+    var selectedStatus by remember { mutableStateOf("Aktif") }
+
+    // Sold Fields
+    var soldPrice by remember { mutableStateOf("") }
+    var selectedSoldCurrency by remember { mutableStateOf("TL") }
+    var soldDate by remember { mutableStateOf("") }
+    var soldTo by remember { mutableStateOf("") }
+
     var isError by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -398,7 +491,6 @@ fun AddWatchDialog(
         title = { Text("Yeni Saat Ekle", fontWeight = FontWeight.Bold) },
         text = {
             Box(modifier = Modifier.fillMaxWidth()) {
-                // Subtle watermark inside dialog
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -543,6 +635,147 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    // Kutu var mı? (Evet / Hayır)
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = hasBox,
+                                onClick = { hasBox = true },
+                                label = { Text("Evet") }
+                            )
+                            FilterChip(
+                                selected = !hasBox,
+                                onClick = { hasBox = false },
+                                label = { Text("Hayır") }
+                            )
+                        }
+                    }
+
+                    // Belge var mı? (Evet / Hayır)
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = hasPapers,
+                                onClick = { hasPapers = true },
+                                label = { Text("Evet") }
+                            )
+                            FilterChip(
+                                selected = !hasPapers,
+                                onClick = { hasPapers = false },
+                                label = { Text("Hayır") }
+                            )
+                        }
+                    }
+
+                    // Saat Fiyatı & Para Birimi
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = price,
+                            onValueChange = { price = it },
+                            label = { Text("Saat Fiyatı") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(CURRENCIES) { curr ->
+                                FilterChip(
+                                    selected = curr == selectedCurrency,
+                                    onClick = { selectedCurrency = curr },
+                                    label = { Text(curr) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Durumu (Aktif, Satıldı)
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Durumu:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(STATUS_OPTIONS) { status ->
+                                FilterChip(
+                                    selected = status == selectedStatus,
+                                    onClick = { selectedStatus = status },
+                                    label = { Text(status) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Eğer Durumu Satıldı ise ek 4 soru
+                    if (selectedStatus == "Satıldı") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Satış Detayları",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
+
+                        OutlinedTextField(
+                            value = soldPrice,
+                            onValueChange = { soldPrice = it },
+                            label = { Text("Kaça satıldı?") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                            Text(text = "Satış Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(CURRENCIES) { curr ->
+                                    FilterChip(
+                                        selected = curr == selectedSoldCurrency,
+                                        onClick = { selectedSoldCurrency = curr },
+                                        label = { Text(curr) }
+                                    )
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = soldDate,
+                            onValueChange = { soldDate = it },
+                            label = { Text("Hangi tarihte satıldı? (Örn: 2026-07-02)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = soldTo,
+                            onValueChange = { soldTo = it },
+                            label = { Text("Kime satıldı?") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(
                             text = "Etiket / Takvim Rengi:",
@@ -591,7 +824,16 @@ fun AddWatchDialog(
                             productionYear,
                             selectedMovementType,
                             movementModel,
-                            photoUri?.toString() ?: ""
+                            photoUri?.toString() ?: "",
+                            hasBox,
+                            hasPapers,
+                            price,
+                            selectedCurrency,
+                            selectedStatus,
+                            soldPrice,
+                            selectedSoldCurrency,
+                            soldDate,
+                            soldTo
                         )
                     }
                 }
