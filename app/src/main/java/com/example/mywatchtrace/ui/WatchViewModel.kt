@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mywatchtrace.data.AppDatabase
 import com.example.mywatchtrace.data.WatchRepository
+import com.example.mywatchtrace.data.dao.WatchWearCount
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,6 +27,7 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: WatchRepository
 
     val allWatches: StateFlow<List<WatchEntity>>
+    val topWornWatches: StateFlow<List<WatchWearCount>>
 
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
@@ -41,6 +43,12 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         repository = WatchRepository(watchDao)
 
         allWatches = repository.allWatches.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+        topWornWatches = repository.topWornWatches.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

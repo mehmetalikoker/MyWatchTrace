@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mywatchtrace.ui.screens.CalendarScreen
 import com.example.mywatchtrace.ui.screens.DailyLogScreen
 import com.example.mywatchtrace.ui.screens.MyWatchesScreen
+import com.example.mywatchtrace.ui.screens.TopWatchesScreen
 import com.example.mywatchtrace.ui.screens.WatchCollectionScreen
 
 sealed class BottomNavItem(
@@ -32,6 +34,7 @@ sealed class BottomNavItem(
 ) {
     data object MyWatches : BottomNavItem("my_watches", "Saatlerim", Icons.Default.Watch)
     data object WatchCollection : BottomNavItem("watch_collection", "Detaylar", Icons.Default.CollectionsBookmark)
+    data object TopWatches : BottomNavItem("top_watches", "İstatistik", Icons.Default.Leaderboard)
     data object DailyLog : BottomNavItem("daily_log", "Günlük Kayıt", Icons.Default.Today)
     data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
 }
@@ -44,6 +47,7 @@ fun MainScreen(
     val items = listOf(
         BottomNavItem.MyWatches,
         BottomNavItem.WatchCollection,
+        BottomNavItem.TopWatches,
         BottomNavItem.DailyLog,
         BottomNavItem.Calendar
     )
@@ -85,6 +89,9 @@ fun MainScreen(
             }
             composable(BottomNavItem.WatchCollection.route) {
                 WatchCollectionScreen(viewModel = viewModel)
+            }
+            composable(BottomNavItem.TopWatches.route) {
+                TopWatchesScreen(viewModel = viewModel)
             }
             composable(BottomNavItem.DailyLog.route) {
                 DailyLogScreen(

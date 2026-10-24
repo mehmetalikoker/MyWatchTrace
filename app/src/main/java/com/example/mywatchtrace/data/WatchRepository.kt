@@ -1,6 +1,7 @@
 package com.example.mywatchtrace.data
 
 import com.example.mywatchtrace.data.dao.WatchDao
+import com.example.mywatchtrace.data.dao.WatchWearCount
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 class WatchRepository(private val watchDao: WatchDao) {
 
     val allWatches: Flow<List<WatchEntity>> = watchDao.getAllWatches()
+    val topWornWatches: Flow<List<WatchWearCount>> = watchDao.getTopWornWatches()
 
     suspend fun addWatch(watch: WatchEntity): Long {
         return watchDao.insertWatch(watch)

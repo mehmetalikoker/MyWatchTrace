@@ -12,6 +12,15 @@ import com.example.mywatchtrace.data.entity.WearLogEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import kotlinx.coroutines.flow.Flow
 
+data class WatchWearCount(
+    val watchId: Long,
+    val brand: String,
+    val model: String,
+    val colorHex: String,
+    val photoUri: String,
+    val wearCount: Int
+)
+
 @Dao
 interface WatchDao {
 
@@ -43,4 +52,14 @@ interface WatchDao {
 
     @Query("SELECT COUNT(*) FROM wear_logs WHERE watchId = :watchId")
     fun getWearCountForWatch(watchId: Long): Flow<Int>
+
+    @Query("""
+        SELECT w.id as watchId, w.brand as brand, w.model as model, w.colorHex as colorHex, w.photoUri as photoUri, COUNT(l.id) as wearCount
+        FROM watches w
+        LEFT JOIN wear_logs l ON w.id = l.watchId
+        GROUP BY w.id
+        ORDER BY wearCount DESC
+        LIMIT 10
+    """)
+    fun getTopWornWatches(): Flow<List<WatchWearCount>>
 }
