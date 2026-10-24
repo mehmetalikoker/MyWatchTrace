@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
@@ -19,6 +20,9 @@ interface WatchDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWatch(watch: WatchEntity): Long
+
+    @Update
+    suspend fun updateWatch(watch: WatchEntity)
 
     @Delete
     suspend fun deleteWatch(watch: WatchEntity)

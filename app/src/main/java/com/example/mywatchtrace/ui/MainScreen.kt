@@ -3,6 +3,7 @@ package com.example.mywatchtrace.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mywatchtrace.ui.screens.CalendarScreen
 import com.example.mywatchtrace.ui.screens.DailyLogScreen
 import com.example.mywatchtrace.ui.screens.MyWatchesScreen
+import com.example.mywatchtrace.ui.screens.WatchCollectionScreen
 
 sealed class BottomNavItem(
     val route: String,
@@ -29,6 +31,7 @@ sealed class BottomNavItem(
     val icon: ImageVector
 ) {
     data object MyWatches : BottomNavItem("my_watches", "Saatlerim", Icons.Default.Watch)
+    data object WatchCollection : BottomNavItem("watch_collection", "Detaylar", Icons.Default.CollectionsBookmark)
     data object DailyLog : BottomNavItem("daily_log", "Günlük Kayıt", Icons.Default.Today)
     data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
 }
@@ -40,6 +43,7 @@ fun MainScreen(
     val navController = rememberNavController()
     val items = listOf(
         BottomNavItem.MyWatches,
+        BottomNavItem.WatchCollection,
         BottomNavItem.DailyLog,
         BottomNavItem.Calendar
     )
@@ -78,6 +82,9 @@ fun MainScreen(
         ) {
             composable(BottomNavItem.Calendar.route) {
                 CalendarScreen(viewModel = viewModel)
+            }
+            composable(BottomNavItem.WatchCollection.route) {
+                WatchCollectionScreen(viewModel = viewModel)
             }
             composable(BottomNavItem.DailyLog.route) {
                 DailyLogScreen(

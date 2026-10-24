@@ -116,6 +116,52 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateWatch(
+        id: Long,
+        brand: String,
+        model: String,
+        colorHex: String,
+        category: String,
+        productionYear: String,
+        movementType: String,
+        movementModel: String,
+        photoUri: String,
+        hasBox: Boolean,
+        hasPapers: Boolean,
+        price: String,
+        currency: String,
+        status: String,
+        soldPrice: String,
+        soldCurrency: String,
+        soldDate: String,
+        soldTo: String
+    ) {
+        viewModelScope.launch {
+            repository.updateWatch(
+                WatchEntity(
+                    id = id,
+                    brand = brand.trim(),
+                    model = model.trim(),
+                    colorHex = colorHex,
+                    category = category.trim(),
+                    productionYear = productionYear.trim(),
+                    movementType = movementType.trim(),
+                    movementModel = movementModel.trim(),
+                    photoUri = photoUri.trim(),
+                    hasBox = hasBox,
+                    hasPapers = hasPapers,
+                    price = price.trim(),
+                    currency = currency,
+                    status = status,
+                    soldPrice = soldPrice.trim(),
+                    soldCurrency = soldCurrency,
+                    soldDate = soldDate.trim(),
+                    soldTo = soldTo.trim()
+                )
+            )
+        }
+    }
+
     fun deleteWatch(watch: WatchEntity) {
         viewModelScope.launch {
             repository.deleteWatch(watch)

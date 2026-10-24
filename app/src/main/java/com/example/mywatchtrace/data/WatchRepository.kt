@@ -14,6 +14,10 @@ class WatchRepository(private val watchDao: WatchDao) {
         return watchDao.insertWatch(watch)
     }
 
+    suspend fun updateWatch(watch: WatchEntity) {
+        watchDao.updateWatch(watch)
+    }
+
     suspend fun deleteWatch(watch: WatchEntity) {
         watchDao.deleteWatch(watch)
     }
