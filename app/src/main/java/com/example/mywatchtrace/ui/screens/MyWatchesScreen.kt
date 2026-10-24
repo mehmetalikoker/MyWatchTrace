@@ -1,5 +1,6 @@
 package com.example.mywatchtrace.ui.screens
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,6 +69,8 @@ import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
+import java.io.File
+import java.io.FileOutputStream
 
 val PREDEFINED_COLORS = listOf(
     "#2196F3", // Mavi
@@ -91,6 +95,24 @@ fun parseHexColor(hex: String, defaultColor: Color = Color.Gray): Color {
         Color(android.graphics.Color.parseColor(hex))
     } catch (_: Exception) {
         defaultColor
+    }
+}
+
+// Helper to copy selected image URI to app's internal storage for permanent persistence
+fun saveUriToInternalStorage(context: Context, uri: Uri): String {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val fileName = "watch_img_${System.currentTimeMillis()}.jpg"
+        val file = File(context.filesDir, fileName)
+        val outputStream = FileOutputStream(file)
+        inputStream?.use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
+            }
+        }
+        file.absolutePath
+    } catch (_: Exception) {
+        uri.toString()
     }
 }
 
@@ -443,6 +465,7 @@ fun AddWatchDialog(
         soldTo: String
     ) -> Unit
 ) {
+    val context = LocalContext.current
     var brand by remember { mutableStateOf("") }
     var model by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Diver") }
@@ -450,7 +473,8 @@ fun AddWatchDialog(
     var selectedMovementType by remember { mutableStateOf("Otomatik") }
     var movementModel by remember { mutableStateOf("") }
     var selectedColorHex by remember { mutableStateOf(PREDEFINED_COLORS.first()) }
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var photoUriString by remember { mutableStateOf("") }
+    var photoDisplayUri by remember { mutableStateOf<Uri?>(null) }
 
     var hasBox by remember { mutableStateOf(false) }
     var hasPapers by remember { mutableStateOf(false) }
@@ -469,7 +493,9 @@ fun AddWatchDialog(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            photoUri = uri
+            photoDisplayUri = uri
+            val internalPath = saveUriToInternalStorage(context, uri)
+            photoUriString = internalPath
         }
     }
 
@@ -500,6 +526,7 @@ fun AddWatchDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Photo Picker at the very top
                     Box(
                         modifier = Modifier
                             .size(90.dp)
@@ -513,9 +540,9 @@ fun AddWatchDialog(
                             .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (photoUri != null) {
+                        if (photoDisplayUri != null) {
                             AsyncImage(
-                                model = photoUri,
+                                model = photoDisplayUri,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -747,38 +774,6 @@ fun AddWatchDialog(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-
-                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-                        Text(
-                            text = "Etiket / Takvim Rengi:",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(PREDEFINED_COLORS) { hex ->
-                                val color = parseHexColor(hex)
-                                val isSelected = hex == selectedColorHex
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 0.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                            shape = CircleShape
-                                        )
-                                        .clickable { selectedColorHex = hex }
-                                )
-                            }
-                        }
-                    }
                 }
             }
         },
@@ -796,7 +791,7 @@ fun AddWatchDialog(
                             productionYear,
                             selectedMovementType,
                             movementModel,
-                            photoUri?.toString() ?: "",
+                            photoUriString,
                             hasBox,
                             hasPapers,
                             price,
@@ -827,13 +822,15 @@ fun EditWatchDialog(
     onDismiss: () -> Unit,
     onConfirm: (WatchEntity) -> Unit
 ) {
+    val context = LocalContext.current
     var brand by remember { mutableStateOf(watch.brand) }
     var model by remember { mutableStateOf(watch.model) }
     var selectedCategory by remember { mutableStateOf(watch.category) }
     var productionYear by remember { mutableStateOf(watch.productionYear) }
     var selectedMovementType by remember { mutableStateOf(watch.movementType) }
     var movementModel by remember { mutableStateOf(watch.movementModel) }
-    var photoUri by remember { mutableStateOf<Uri?>(if (watch.photoUri.isNotBlank()) Uri.parse(watch.photoUri) else null) }
+    var photoUriString by remember { mutableStateOf(watch.photoUri) }
+    var photoDisplayUri by remember { mutableStateOf<Uri?>(if (watch.photoUri.isNotBlank()) Uri.parse(watch.photoUri) else null) }
 
     var hasBox by remember { mutableStateOf(watch.hasBox) }
     var hasPapers by remember { mutableStateOf(watch.hasPapers) }
@@ -850,7 +847,9 @@ fun EditWatchDialog(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            photoUri = uri
+            photoDisplayUri = uri
+            val internalPath = saveUriToInternalStorage(context, uri)
+            photoUriString = internalPath
         }
     }
 
@@ -897,9 +896,9 @@ fun EditWatchDialog(
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (photoUri != null) {
+                            if (photoDisplayUri != null) {
                                 AsyncImage(
-                                    model = photoUri,
+                                    model = photoDisplayUri,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
@@ -1048,7 +1047,7 @@ fun EditWatchDialog(
                         OutlinedTextField(
                             value = soldTo,
                             onValueChange = { soldTo = it },
-                            label = { Text(soldTo) },
+                            label = { Text("Kime satıldı?") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1067,7 +1066,7 @@ fun EditWatchDialog(
                             productionYear = productionYear,
                             movementType = selectedMovementType,
                             movementModel = movementModel,
-                            photoUri = photoUri?.toString() ?: "",
+                            photoUri = photoUriString,
                             hasBox = hasBox,
                             hasPapers = hasPapers,
                             price = price,
