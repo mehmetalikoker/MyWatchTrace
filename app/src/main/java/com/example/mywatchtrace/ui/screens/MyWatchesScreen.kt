@@ -18,10 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -124,6 +123,7 @@ fun MyWatchesScreen(
 ) {
     val watches by viewModel.allWatches.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var watchToEdit by remember { mutableStateOf<WatchEntity?>(null) }
     var watchToDelete by remember { mutableStateOf<WatchEntity?>(null) }
 
     Scaffold(
@@ -184,16 +184,16 @@ fun MyWatchesScreen(
                         )
                     }
                 } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(1),
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(watches, key = { it.id }) { watch ->
-                            WatchCard(
+                            DetailedWatchCard(
                                 watch = watch,
+                                onEditClick = { watchToEdit = watch },
                                 onDeleteClick = { watchToDelete = watch }
                             )
                         }
@@ -231,6 +231,36 @@ fun MyWatchesScreen(
         )
     }
 
+    watchToEdit?.let { watch ->
+        EditWatchDialog(
+            watch = watch,
+            onDismiss = { watchToEdit = null },
+            onConfirm = { updatedWatch ->
+                viewModel.updateWatch(
+                    id = updatedWatch.id,
+                    brand = updatedWatch.brand,
+                    model = updatedWatch.model,
+                    colorHex = updatedWatch.colorHex,
+                    category = updatedWatch.category,
+                    productionYear = updatedWatch.productionYear,
+                    movementType = updatedWatch.movementType,
+                    movementModel = updatedWatch.movementModel,
+                    photoUri = updatedWatch.photoUri,
+                    hasBox = updatedWatch.hasBox,
+                    hasPapers = updatedWatch.hasPapers,
+                    price = updatedWatch.price,
+                    currency = updatedWatch.currency,
+                    status = updatedWatch.status,
+                    soldPrice = updatedWatch.soldPrice,
+                    soldCurrency = updatedWatch.soldCurrency,
+                    soldDate = updatedWatch.soldDate,
+                    soldTo = updatedWatch.soldTo
+                )
+                watchToEdit = null
+            }
+        )
+    }
+
     watchToDelete?.let { watch ->
         AlertDialog(
             onDismissRequest = { watchToDelete = null },
@@ -256,8 +286,22 @@ fun MyWatchesScreen(
 }
 
 @Composable
-fun WatchCard(
+fun DetailRow(label: String, value: String) {
+    if (value.isNotBlank() && value != " ()") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+            Text(text = value, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun DetailedWatchCard(
     watch: WatchEntity,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     val watchColor = parseHexColor(watch.colorHex)
@@ -267,135 +311,109 @@ fun WatchCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSold)
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
             else
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            if (watch.photoUri.isNotBlank()) {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(64.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    AsyncImage(
-                        model = watch.photoUri,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(watchColor.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(watchColor)
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = watch.category.ifBlank { "Diver" },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        if (watch.productionYear.isNotBlank()) {
-                            Text(
-                                text = "• ${watch.productionYear}",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (watch.photoUri.isNotBlank()) {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            AsyncImage(
+                                model = watch.photoUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
-                        if (isSold) {
-                            Text(
-                                text = "• SATILDI",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(watchColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = onDeleteClick,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Sil",
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                            modifier = Modifier.size(16.dp)
+                    Column {
+                        Text(
+                            text = "${watch.brand} ${watch.model}",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = watch.category,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (watch.productionYear.isNotBlank()) {
+                                Text(
+                                    text = "• Yapım Yılı: ${watch.productionYear}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = watch.brand,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-
-                Text(
-                    text = watch.model,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Mekanizma: ${watch.movementType}",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (watch.price.isNotBlank()) {
-                        Text(
-                            text = "Fiyat: ${watch.price} ${watch.currency}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Düzenle", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
+                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Delete, contentDescription = "Sil", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        RoundedCornerShape(10.dp)
+                    )
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                DetailRow("Mekanizma", "${watch.movementType} (${watch.movementModel})")
+                DetailRow("Kutu & Belge", "Kutu: ${if (watch.hasBox) "Var" else "Yok"} | Belge: ${if (watch.hasPapers) "Var" else "Yok"}")
+                DetailRow("Alış Fiyatı", "${watch.price} ${watch.currency}")
+                DetailRow("Durumu", watch.status)
+                if (isSold) {
+                    DetailRow("Satış Bilgisi", "${watch.soldPrice} ${watch.soldCurrency} | Tarih: ${watch.soldDate} | Alıcı: ${watch.soldTo}")
                 }
             }
         }
@@ -482,7 +500,6 @@ fun AddWatchDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Photo Picker at the very top
                     Box(
                         modifier = Modifier
                             .size(90.dp)
@@ -551,7 +568,6 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Category Selection
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -569,7 +585,6 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Production Year
                     OutlinedTextField(
                         value = productionYear,
                         onValueChange = { productionYear = it },
@@ -578,7 +593,6 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Movement Type Selection
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -596,7 +610,6 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Movement Model
                     OutlinedTextField(
                         value = movementModel,
                         onValueChange = { movementModel = it },
@@ -605,7 +618,6 @@ fun AddWatchDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Kutu var mı?
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -623,7 +635,6 @@ fun AddWatchDialog(
                         }
                     }
 
-                    // Belge var mı?
                     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
                         Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -800,6 +811,277 @@ fun AddWatchDialog(
                 }
             ) {
                 Text("Ekle", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("İptal")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditWatchDialog(
+    watch: WatchEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (WatchEntity) -> Unit
+) {
+    var brand by remember { mutableStateOf(watch.brand) }
+    var model by remember { mutableStateOf(watch.model) }
+    var selectedCategory by remember { mutableStateOf(watch.category) }
+    var productionYear by remember { mutableStateOf(watch.productionYear) }
+    var selectedMovementType by remember { mutableStateOf(watch.movementType) }
+    var movementModel by remember { mutableStateOf(watch.movementModel) }
+    var photoUri by remember { mutableStateOf<Uri?>(if (watch.photoUri.isNotBlank()) Uri.parse(watch.photoUri) else null) }
+
+    var hasBox by remember { mutableStateOf(watch.hasBox) }
+    var hasPapers by remember { mutableStateOf(watch.hasPapers) }
+    var price by remember { mutableStateOf(watch.price) }
+    var selectedCurrency by remember { mutableStateOf(watch.currency) }
+    var selectedStatus by remember { mutableStateOf(watch.status) }
+
+    var soldPrice by remember { mutableStateOf(watch.soldPrice) }
+    var selectedSoldCurrency by remember { mutableStateOf(watch.soldCurrency) }
+    var soldDate by remember { mutableStateOf(watch.soldDate) }
+    var soldTo by remember { mutableStateOf(watch.soldTo) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            photoUri = uri
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Saati Güncelle", fontWeight = FontWeight.Bold) },
+        text = {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img),
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp),
+                        alpha = 0.05f
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (photoUri != null) {
+                                AsyncImage(
+                                    model = photoUri,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddAPhoto,
+                                        contentDescription = "Fotoğraf Değiştir",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "Fotoğraf", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = brand,
+                        onValueChange = { brand = it },
+                        label = { Text("Marka") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = model,
+                        onValueChange = { model = it },
+                        label = { Text("Model") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kategori:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(WATCH_CATEGORIES) { cat ->
+                                FilterChip(selected = cat == selectedCategory, onClick = { selectedCategory = cat }, label = { Text(cat) })
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = productionYear,
+                        onValueChange = { productionYear = it },
+                        label = { Text("Yapım Yılı") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Mekanizma Tipi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(MOVEMENT_TYPES) { mov ->
+                                FilterChip(selected = mov == selectedMovementType, onClick = { selectedMovementType = mov }, label = { Text(mov) })
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = movementModel,
+                        onValueChange = { movementModel = it },
+                        label = { Text("Mekanizma Modeli / Kalibre") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Kutu var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = hasBox, onClick = { hasBox = true }, label = { Text("Evet") })
+                            FilterChip(selected = !hasBox, onClick = { hasBox = false }, label = { Text("Hayır") })
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Belge var mı?", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = hasPapers, onClick = { hasPapers = true }, label = { Text("Evet") })
+                            FilterChip(selected = !hasPapers, onClick = { hasPapers = false }, label = { Text("Hayır") })
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = price,
+                        onValueChange = { price = it },
+                        label = { Text("Saat Fiyatı") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(CURRENCIES) { curr ->
+                                FilterChip(selected = curr == selectedCurrency, onClick = { selectedCurrency = curr }, label = { Text(curr) })
+                            }
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text(text = "Durumu:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(STATUS_OPTIONS) { status ->
+                                FilterChip(selected = status == selectedStatus, onClick = { selectedStatus = status }, label = { Text(status) })
+                            }
+                        }
+                    }
+
+                    if (selectedStatus == "Satıldı") {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "Satış Detayları", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Start))
+
+                        OutlinedTextField(
+                            value = soldPrice,
+                            onValueChange = { soldPrice = it },
+                            label = { Text("Kaça satıldı?") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                            Text(text = "Satış Para Birimi:", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                items(CURRENCIES) { curr ->
+                                    FilterChip(selected = curr == selectedSoldCurrency, onClick = { selectedSoldCurrency = curr }, label = { Text(curr) })
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = soldDate,
+                            onValueChange = { soldDate = it },
+                            label = { Text("Hangi tarihte satıldı?") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = soldTo,
+                            onValueChange = { soldTo = it },
+                            label = { Text(soldTo) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        watch.copy(
+                            brand = brand,
+                            model = model,
+                            category = selectedCategory,
+                            productionYear = productionYear,
+                            movementType = selectedMovementType,
+                            movementModel = movementModel,
+                            photoUri = photoUri?.toString() ?: "",
+                            hasBox = hasBox,
+                            hasPapers = hasPapers,
+                            price = price,
+                            currency = selectedCurrency,
+                            status = selectedStatus,
+                            soldPrice = soldPrice,
+                            soldCurrency = selectedSoldCurrency,
+                            soldDate = soldDate,
+                            soldTo = soldTo
+                        )
+                    )
+                }
+            ) {
+                Text("Güncelle", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
