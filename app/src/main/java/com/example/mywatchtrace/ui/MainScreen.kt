@@ -33,9 +33,9 @@ sealed class BottomNavItem(
     val icon: ImageVector
 ) {
     data object MyWatches : BottomNavItem("my_watches", "Saatlerim", Icons.Default.Watch)
-    data object TopWatches : BottomNavItem("top_watches", "İstatistik", Icons.Default.Leaderboard)
     data object DailyLog : BottomNavItem("daily_log", "Günlük", Icons.Default.Today)
     data object Calendar : BottomNavItem("calendar", "Takvim", Icons.Default.CalendarMonth)
+    data object TopWatches : BottomNavItem("top_watches", "İstatistik", Icons.Default.Leaderboard)
     data object Finance : BottomNavItem("finance", "Finans", Icons.Default.Savings)
 }
 
@@ -46,9 +46,9 @@ fun MainScreen(
     val navController = rememberNavController()
     val items = listOf(
         BottomNavItem.MyWatches,
-        BottomNavItem.TopWatches,
         BottomNavItem.DailyLog,
         BottomNavItem.Calendar,
+        BottomNavItem.TopWatches,
         BottomNavItem.Finance
     )
 
