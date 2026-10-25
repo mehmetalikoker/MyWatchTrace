@@ -89,7 +89,7 @@ val PREDEFINED_COLORS = listOf(
 )
 
 val WATCH_CATEGORIES = listOf("Diver", "Dress", "Spor", "Pilot")
-val MOVEMENT_TYPES = listOf("Otomatik", "Quartz", "Kurmalı")
+val MOVEMENT_TYPES = listOf("Otomatik", "Quartz", "Kurmalı", "Solar", "Hibrit")
 val CURRENCIES = listOf("TL", "USD", "EUR", "CHF")
 val STATUS_OPTIONS = listOf("Aktif", "Satıldı")
 
