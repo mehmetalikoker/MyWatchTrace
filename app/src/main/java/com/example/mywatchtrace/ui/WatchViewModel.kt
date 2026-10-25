@@ -136,6 +136,12 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun importWatch(watch: WatchEntity) {
+        viewModelScope.launch {
+            repository.addWatch(watch)
+        }
+    }
+
     fun updateWatch(
         id: Long,
         brand: String,

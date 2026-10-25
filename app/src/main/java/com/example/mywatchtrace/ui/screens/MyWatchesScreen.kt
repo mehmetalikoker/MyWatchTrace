@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -69,6 +71,7 @@ import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
+import com.example.mywatchtrace.utils.WatchCsvUtils
 import java.io.File
 import java.io.FileOutputStream
 
@@ -142,10 +145,29 @@ fun WatchWatermarkBackground(
 fun MyWatchesScreen(
     viewModel: WatchViewModel
 ) {
+    val context = LocalContext.current
     val watches by viewModel.allWatches.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var watchToEdit by remember { mutableStateOf<WatchEntity?>(null) }
     var watchToDelete by remember { mutableStateOf<WatchEntity?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri: Uri? ->
+        if (uri != null) {
+            WatchCsvUtils.exportWatchesToCsv(context, uri, watches)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            WatchCsvUtils.importWatchesFromCsv(context, uri) { watch ->
+                viewModel.importWatch(watch)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -155,6 +177,14 @@ fun MyWatchesScreen(
                         text = "Saatlerim (${watches.size})",
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = { exportLauncher.launch("mywatchtrace_backup.csv") }) {
+                        Icon(Icons.Default.Save, contentDescription = "Yedekle (CSV)")
+                    }
+                    IconButton(onClick = { importLauncher.launch("text/*") }) {
+                        Icon(Icons.Default.FolderOpen, contentDescription = "Geri Yükle (CSV)")
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
