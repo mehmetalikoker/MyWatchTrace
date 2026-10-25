@@ -67,6 +67,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
@@ -150,6 +152,7 @@ fun MyWatchesScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var watchToEdit by remember { mutableStateOf<WatchEntity?>(null) }
     var watchToDelete by remember { mutableStateOf<WatchEntity?>(null) }
+    var fullscreenPhotoUri by remember { mutableStateOf<String?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
@@ -245,7 +248,8 @@ fun MyWatchesScreen(
                             DetailedWatchCard(
                                 watch = watch,
                                 onEditClick = { watchToEdit = watch },
-                                onDeleteClick = { watchToDelete = watch }
+                                onDeleteClick = { watchToDelete = watch },
+                                onPhotoClick = { uri -> fullscreenPhotoUri = uri }
                             )
                         }
                     }
@@ -336,6 +340,41 @@ fun MyWatchesScreen(
             }
         )
     }
+
+    fullscreenPhotoUri?.let { uri ->
+        FullscreenImageDialog(
+            photoUri = uri,
+            onDismiss = { fullscreenPhotoUri = null }
+        )
+    }
+}
+
+@Composable
+fun FullscreenImageDialog(
+    photoUri: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f))
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = photoUri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -355,7 +394,8 @@ fun DetailRow(label: String, value: String) {
 fun DetailedWatchCard(
     watch: WatchEntity,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onPhotoClick: (String) -> Unit
 ) {
     val watchColor = parseHexColor(watch.colorHex)
     val isSold = watch.status == "Satıldı"
@@ -388,7 +428,9 @@ fun DetailedWatchCard(
                     if (watch.photoUri.isNotBlank()) {
                         Card(
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.size(52.dp)
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clickable { onPhotoClick(watch.photoUri) }
                         ) {
                             AsyncImage(
                                 model = watch.photoUri,
