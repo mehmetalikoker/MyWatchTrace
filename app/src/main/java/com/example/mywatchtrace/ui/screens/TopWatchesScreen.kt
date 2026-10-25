@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.HourglassDisabled
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -61,10 +62,12 @@ fun TopWatchesScreen(
 ) {
     val topWatchesAllTime by viewModel.topWornWatches.collectAsState()
     val topWatchesMonth by viewModel.topWornWatchesForCurrentMonth.collectAsState()
+    val leastWornWatches by viewModel.leastWornWatches.collectAsState()
     val selectedYearMonth by viewModel.selectedYearMonth.collectAsState()
 
     var showMonthDialog by remember { mutableStateOf(false) }
     var showAllTimeDialog by remember { mutableStateOf(false) }
+    var showLeastWornDialog by remember { mutableStateOf(false) }
 
     val turkishLocale = remember { Locale.Builder().setLanguage("tr").setRegion("TR").build() }
     val monthTitle = remember(selectedYearMonth) {
@@ -140,6 +143,14 @@ fun TopWatchesScreen(
                     icon = Icons.Default.EmojiEvents,
                     onClick = { showAllTimeDialog = true }
                 )
+
+                // Button 3: Least Worn All Time Top 10
+                StatMenuCard(
+                    title = "Tüm Zamanların En Az Kullanılanları",
+                    subtitle = "Tüm Dönemler (Top 10 Liste)",
+                    icon = Icons.Default.HourglassDisabled,
+                    onClick = { showLeastWornDialog = true }
+                )
             }
         }
     }
@@ -204,6 +215,39 @@ fun TopWatchesScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAllTimeDialog = false }) {
+                    Text("Kapat", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Least Worn Dialog
+    if (showLeastWornDialog) {
+        AlertDialog(
+            onDismissRequest = { showLeastWornDialog = false },
+            title = { Text("Tüm Zamanların En Az Kullanılanları") },
+            text = {
+                if (leastWornWatches.isEmpty()) {
+                    Text(
+                        text = "Kayıtlı aktif saat bulunmuyor.",
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(350.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(leastWornWatches) { index, item ->
+                            TopWatchItemCard(rank = index + 1, item = item)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLeastWornDialog = false }) {
                     Text("Kapat", fontWeight = FontWeight.Bold)
                 }
             }

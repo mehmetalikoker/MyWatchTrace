@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,6 +30,7 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     val allWatches: StateFlow<List<WatchEntity>>
     val topWornWatches: StateFlow<List<WatchWearCount>>
     val topWornWatchesForCurrentMonth: StateFlow<List<WatchWearCount>>
+    val leastWornWatches: StateFlow<List<WatchWearCount>>
 
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
@@ -50,6 +52,12 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         topWornWatches = repository.topWornWatches.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+        leastWornWatches = repository.leastWornWatches.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

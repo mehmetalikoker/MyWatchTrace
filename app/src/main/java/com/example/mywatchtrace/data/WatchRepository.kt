@@ -11,6 +11,7 @@ class WatchRepository(private val watchDao: WatchDao) {
 
     val allWatches: Flow<List<WatchEntity>> = watchDao.getAllWatches()
     val topWornWatches: Flow<List<WatchWearCount>> = watchDao.getTopWornWatches()
+    val leastWornWatches: Flow<List<WatchWearCount>> = watchDao.getLeastWornWatches()
 
     suspend fun addWatch(watch: WatchEntity): Long {
         return watchDao.insertWatch(watch)

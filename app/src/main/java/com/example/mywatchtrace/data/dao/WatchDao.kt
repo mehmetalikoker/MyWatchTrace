@@ -73,4 +73,15 @@ interface WatchDao {
         LIMIT 5
     """)
     fun getTopWornWatchesForMonth(yearMonth: String): Flow<List<WatchWearCount>>
+
+    @Query("""
+        SELECT w.id as watchId, w.brand as brand, w.model as model, w.colorHex as colorHex, w.photoUri as photoUri, COUNT(l.id) as wearCount
+        FROM watches w
+        LEFT JOIN wear_logs l ON w.id = l.watchId
+        WHERE w.status = 'Aktif'
+        GROUP BY w.id
+        ORDER BY wearCount ASC
+        LIMIT 10
+    """)
+    fun getLeastWornWatches(): Flow<List<WatchWearCount>>
 }
