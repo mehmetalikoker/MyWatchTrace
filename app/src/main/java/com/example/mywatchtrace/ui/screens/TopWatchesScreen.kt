@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -44,13 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.mywatchtrace.data.dao.WatchWearCount
+import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -330,8 +329,6 @@ fun TopWatchItemCard(
     rank: Int,
     item: WatchWearCount
 ) {
-    val watchColor = parseHexColor(item.colorHex)
-
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
@@ -343,76 +340,24 @@ fun TopWatchItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Text(
+                text = "$rank - ${item.brand} ${item.model}",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(
-                            when (rank) {
-                                1 -> Color(0xFFFFD700)
-                                2 -> Color(0xFFC0C0C0)
-                                3 -> Color(0xFFCD7F32)
-                                else -> MaterialTheme.colorScheme.primaryContainer
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$rank",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = if (rank <= 3) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+            )
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                if (item.photoUri.isNotBlank()) {
-                    Card(
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        AsyncImage(
-                            model = item.photoUri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(watchColor)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
-
-                Column {
-                    Text(
-                        text = "${item.brand} ${item.model}",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Toplam ${item.wearCount} kez takıldı",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+            Text(
+                text = "${item.wearCount} kez",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
