@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.BrightnessMedium
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wallpaper
@@ -52,6 +53,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mywatchtrace.ui.WatchViewModel
 
+fun convertToCurrency(amount: Double, fromCurrency: String, toCurrency: String): Double {
+    val rateToTL = when (fromCurrency.uppercase()) {
+        "USD" -> 34.0
+        "EUR" -> 37.0
+        "CHF" -> 39.0
+        else -> 1.0
+    }
+    val amountInTL = amount * rateToTL
+
+    val rateFromTL = when (toCurrency.uppercase()) {
+        "USD" -> 1.0 / 34.0
+        "EUR" -> 1.0 / 37.0
+        "CHF" -> 1.0 / 39.0
+        else -> 1.0
+    }
+    return amountInTL * rateFromTL
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceScreen(
@@ -60,22 +79,34 @@ fun FinanceScreen(
     val context = LocalContext.current
     val watches by viewModel.allWatches.collectAsState()
     var selectedTab by remember { mutableStateOf(0) } // 0: Finans, 1: Ayarlar
+    var targetCurrency by remember { mutableStateOf("TL") }
 
     val activeWatches = watches.filter { it.status == "Aktif" }
     val soldWatches = watches.filter { it.status == "Satıldı" }
 
-    // Group active investments by currency
+    val totalActiveCount = activeWatches.size
+    val totalSoldCount = soldWatches.size
+
+    // Calculate unified active investment in target currency
+    val totalActiveCostUnified = activeWatches.sumOf { watch ->
+        val amount = watch.price.toDoubleOrNull() ?: 0.0
+        convertToCurrency(amount, watch.currency.ifBlank { "TL" }, targetCurrency)
+    }
+
+    // Calculate unified sold revenue in target currency
+    val totalSoldRevenueUnified = soldWatches.sumOf { watch ->
+        val amount = watch.soldPrice.toDoubleOrNull() ?: 0.0
+        convertToCurrency(amount, watch.soldCurrency.ifBlank { "TL" }, targetCurrency)
+    }
+
+    // Group active investments by currency for original breakdown
     val activeInvestments = activeWatches
         .groupBy { it.currency.ifBlank { "TL" } }
         .mapValues { entry -> entry.value.sumOf { it.price.toDoubleOrNull() ?: 0.0 } }
 
-    // Group sold revenues by currency
     val soldRevenues = soldWatches
         .groupBy { it.soldCurrency.ifBlank { "TL" } }
         .mapValues { entry -> entry.value.sumOf { it.soldPrice.toDoubleOrNull() ?: 0.0 } }
-
-    val totalActiveCount = activeWatches.size
-    val totalSoldCount = soldWatches.size
 
     val splashPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -174,6 +205,86 @@ fun FinanceScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
+                    // Target Currency Selector Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(imageVector = Icons.Default.CurrencyExchange, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Text(
+                                    text = "Hedef Para Birimi (Çevirici)",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "Tüm koleksiyon değerini tek bir para biriminde hesaplayın:",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf("TL", "USD", "EUR", "CHF").forEach { curr ->
+                                    FilterChip(
+                                        selected = curr == targetCurrency,
+                                        onClick = { targetCurrency = curr },
+                                        label = { Text(curr) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Unified Total Portfolio Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Toplam Portföy Değeri ($targetCurrency)",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "%.2f %s".format(totalActiveCostUnified, targetCurrency),
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (totalSoldRevenueUnified > 0) {
+                                Text(
+                                    text = "Satış Gelirleri Toplamı: %.2f %s".format(totalSoldRevenueUnified, targetCurrency),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+
                     // Summary Stats Card
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -213,7 +324,7 @@ fun FinanceScreen(
                         }
                     }
 
-                    // Active Portfolio Investment by Currency
+                    // Active Portfolio Investment by Currency (Original Breakdown)
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
@@ -230,7 +341,7 @@ fun FinanceScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Icon(imageVector = Icons.Default.AccountBalance, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                 Text(
-                                    text = "Aktif Koleksiyon Maliyeti",
+                                    text = "Orijinal Para Birimi Dökümü",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
