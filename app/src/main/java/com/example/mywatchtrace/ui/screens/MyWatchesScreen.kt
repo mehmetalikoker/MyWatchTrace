@@ -703,7 +703,13 @@ fun DetailedWatchCard(
                 DetailRow("Alış Fiyatı", "${watch.price} ${watch.currency}")
                 DetailRow("Durumu", watch.status)
                 if (isSold) {
-                    DetailRow("Satış Bilgisi", "${watch.soldPrice} ${watch.soldCurrency} | Tarih: ${watch.soldDate} | Alıcı: ${watch.soldTo}")
+                    DetailRow("Satış Fiyatı", "${watch.soldPrice} ${watch.soldCurrency}")
+                    if (watch.soldDate.isNotBlank()) {
+                        DetailRow("Satış Tarihi", watch.soldDate)
+                    }
+                    if (watch.soldTo.isNotBlank()) {
+                        DetailRow("Alıcı", watch.soldTo)
+                    }
                 }
             }
         }
