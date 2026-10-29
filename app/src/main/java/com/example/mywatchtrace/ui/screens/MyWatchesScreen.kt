@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Watch
@@ -158,6 +159,11 @@ fun MyWatchesScreen(
     var watchToDelete by remember { mutableStateOf<WatchEntity?>(null) }
     var watchForAccuracy by remember { mutableStateOf<WatchEntity?>(null) }
     var fullscreenPhotoUri by remember { mutableStateOf<String?>(null) }
+    var showSoldArchive by remember { mutableStateOf(false) }
+
+    val activeWatches = remember(watches) { watches.filter { it.status == "Aktif" } }
+    val soldWatches = remember(watches) { watches.filter { it.status == "Satıldı" } }
+    val displayedWatches = if (showSoldArchive) soldWatches else activeWatches
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
@@ -182,11 +188,18 @@ fun MyWatchesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Saatlerim (${watches.size})",
+                        text = if (showSoldArchive) "Satılanlar (${soldWatches.size})" else "Saatlerim (${activeWatches.size})",
                         fontWeight = FontWeight.Bold
                     )
                 },
                 actions = {
+                    IconButton(onClick = { showSoldArchive = !showSoldArchive }) {
+                        Icon(
+                            imageVector = if (showSoldArchive) Icons.Default.Watch else Icons.Default.History,
+                            contentDescription = if (showSoldArchive) "Aktif Saatler" else "Satılanlar Arşivi",
+                            tint = if (showSoldArchive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = { exportLauncher.launch("mywatchtrace_backup.csv") }) {
                         Icon(Icons.Default.Save, contentDescription = "Yedekle (CSV)")
                     }
@@ -215,7 +228,7 @@ fun MyWatchesScreen(
                 .padding(innerPadding)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                if (watches.isEmpty()) {
+                if (displayedWatches.isEmpty()) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -224,20 +237,20 @@ fun MyWatchesScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Watch,
+                            imageVector = if (showSoldArchive) Icons.Default.History else Icons.Default.Watch,
                             contentDescription = null,
                             modifier = Modifier.size(72.dp),
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Henüz kayıtlı saatiniz yok",
+                            text = if (showSoldArchive) "Henüz satılan saatiniz yok" else "Henüz kayıtlı saatiniz yok",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Sağ alttaki '+' butonuna basarak ilk saatinizi ekleyin.",
+                            text = if (showSoldArchive) "Durumu 'Satıldı' olan saatler burada görünür." else "Sağ alttaki '+' butonuna basarak ilk saatinizi ekleyin.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -249,7 +262,7 @@ fun MyWatchesScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(watches, key = { it.id }) { watch ->
+                        items(displayedWatches, key = { it.id }) { watch ->
                             DetailedWatchCard(
                                 watch = watch,
                                 onEditClick = { watchToEdit = watch },
