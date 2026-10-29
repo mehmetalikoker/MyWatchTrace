@@ -1,13 +1,15 @@
 package com.example.mywatchtrace.data
 
+import com.example.mywatchtrace.data.dao.AccuracyDao
 import com.example.mywatchtrace.data.dao.WatchDao
 import com.example.mywatchtrace.data.dao.WatchWearCount
+import com.example.mywatchtrace.data.entity.AccuracyLogEntity
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import kotlinx.coroutines.flow.Flow
 
-class WatchRepository(private val watchDao: WatchDao) {
+class WatchRepository(private val watchDao: WatchDao, private val accuracyDao: AccuracyDao) {
 
     val allWatches: Flow<List<WatchEntity>> = watchDao.getAllWatches()
     val topWornWatches: Flow<List<WatchWearCount>> = watchDao.getTopWornWatches()
@@ -47,5 +49,17 @@ class WatchRepository(private val watchDao: WatchDao) {
 
     fun getWearCountForWatch(watchId: Long): Flow<Int> {
         return watchDao.getWearCountForWatch(watchId)
+    }
+
+    fun getAccuracyLogsForWatch(watchId: Long): Flow<List<AccuracyLogEntity>> {
+        return accuracyDao.getAccuracyLogsForWatch(watchId)
+    }
+
+    suspend fun addAccuracyLog(watchId: Long, deviationSeconds: Float, date: String, notes: String) {
+        accuracyDao.insertAccuracyLog(AccuracyLogEntity(watchId = watchId, deviationSeconds = deviationSeconds, date = date, notes = notes))
+    }
+
+    suspend fun deleteAccuracyLog(log: AccuracyLogEntity) {
+        accuracyDao.deleteAccuracyLog(log)
     }
 }

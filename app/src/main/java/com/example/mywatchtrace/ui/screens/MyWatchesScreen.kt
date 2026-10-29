@@ -34,8 +34,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,11 +73,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
+import com.example.mywatchtrace.data.entity.AccuracyLogEntity
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
 import com.example.mywatchtrace.utils.WatchCsvUtils
 import java.io.File
 import java.io.FileOutputStream
+import java.time.LocalDate
 
 val PREDEFINED_COLORS = listOf(
     "#2196F3", // Mavi
@@ -152,6 +156,7 @@ fun MyWatchesScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var watchToEdit by remember { mutableStateOf<WatchEntity?>(null) }
     var watchToDelete by remember { mutableStateOf<WatchEntity?>(null) }
+    var watchForAccuracy by remember { mutableStateOf<WatchEntity?>(null) }
     var fullscreenPhotoUri by remember { mutableStateOf<String?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -249,6 +254,7 @@ fun MyWatchesScreen(
                                 watch = watch,
                                 onEditClick = { watchToEdit = watch },
                                 onDeleteClick = { watchToDelete = watch },
+                                onAccuracyClick = { w -> watchForAccuracy = w },
                                 onPhotoClick = { uri -> fullscreenPhotoUri = uri }
                             )
                         }
@@ -341,12 +347,175 @@ fun MyWatchesScreen(
         )
     }
 
+    watchForAccuracy?.let { watch ->
+        AccuracyLogsDialog(
+            watch = watch,
+            viewModel = viewModel,
+            onDismiss = { watchForAccuracy = null }
+        )
+    }
+
     fullscreenPhotoUri?.let { uri ->
         FullscreenImageDialog(
             photoUri = uri,
             onDismiss = { fullscreenPhotoUri = null }
         )
     }
+}
+
+@Composable
+fun AccuracyLogsDialog(
+    watch: WatchEntity,
+    viewModel: WatchViewModel,
+    onDismiss: () -> Unit
+) {
+    val accuracyLogs by viewModel.getAccuracyLogs(watch.id).collectAsState(initial = emptyList())
+    var deviationInput by remember { mutableStateOf("") }
+    var notesInput by remember { mutableStateOf("") }
+    var showAddForm by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Zaman Sapması (${watch.brand} ${watch.model})") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (showAddForm) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Yeni Ölçüm Ekle (Saniye/Gün)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            OutlinedTextField(
+                                value = deviationInput,
+                                onValueChange = { deviationInput = it },
+                                label = { Text("Sapma (örn: +4.5 veya -2)") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = notesInput,
+                                onValueChange = { notesInput = it },
+                                label = { Text("Not (örn: Kolda, kadranda yukarı)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.align(Alignment.End)) {
+                                TextButton(onClick = { showAddForm = false }) {
+                                    Text("İptal")
+                                }
+                                Button(onClick = {
+                                    val dev = deviationInput.toFloatOrNull()
+                                    if (dev != null) {
+                                        viewModel.addAccuracyLog(watch.id, dev, LocalDate.now().toString(), notesInput)
+                                        deviationInput = ""
+                                        notesInput = ""
+                                        showAddForm = false
+                                    }
+                                }) {
+                                    Text("Kaydet")
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = { showAddForm = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Yeni Ölçüm Ekle")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                if (accuracyLogs.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Henüz zaman sapması ölçümü eklenmemiş.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(accuracyLogs, key = { it.id }) { log ->
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        val devText = if (log.deviationSeconds > 0) "+${log.deviationSeconds} sn/gün" else "${log.deviationSeconds} sn/gün"
+                                        Text(
+                                            text = devText,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = if (log.deviationSeconds > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                        )
+                                        Text(
+                                            text = "${log.date} ${if (log.notes.isNotBlank()) "• ${log.notes}" else ""}",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { viewModel.deleteAccuracyLog(log) },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Sil",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Kapat", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }
 
 @Composable
@@ -395,6 +564,7 @@ fun DetailedWatchCard(
     watch: WatchEntity,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onAccuracyClick: (WatchEntity) -> Unit,
     onPhotoClick: (String) -> Unit
 ) {
     val watchColor = parseHexColor(watch.colorHex)
@@ -481,7 +651,10 @@ fun DetailedWatchCard(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    IconButton(onClick = { onAccuracyClick(watch) }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Timer, contentDescription = "Zaman Sapması", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    }
                     IconButton(onClick = onEditClick, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Default.Edit, contentDescription = "Düzenle", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }

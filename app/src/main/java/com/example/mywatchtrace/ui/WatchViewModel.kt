@@ -8,9 +8,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.mywatchtrace.data.AppDatabase
 import com.example.mywatchtrace.data.WatchRepository
 import com.example.mywatchtrace.data.dao.WatchWearCount
+import com.example.mywatchtrace.data.entity.AccuracyLogEntity
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,8 +52,8 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     val wearLogsForSelectedMonth: StateFlow<List<WearLogWithWatch>>
 
     init {
-        val watchDao = AppDatabase.getDatabase(application).watchDao()
-        repository = WatchRepository(watchDao)
+        val db = AppDatabase.getDatabase(application)
+        repository = WatchRepository(db.watchDao(), db.accuracyDao())
 
         allWatches = repository.allWatches.stateIn(
             scope = viewModelScope,
@@ -231,6 +233,22 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     fun removeWearLog(watchId: Long, date: String) {
         viewModelScope.launch {
             repository.removeWearLog(watchId, date)
+        }
+    }
+
+    fun getAccuracyLogs(watchId: Long): Flow<List<AccuracyLogEntity>> {
+        return repository.getAccuracyLogsForWatch(watchId)
+    }
+
+    fun addAccuracyLog(watchId: Long, deviationSeconds: Float, date: String, notes: String) {
+        viewModelScope.launch {
+            repository.addAccuracyLog(watchId, deviationSeconds, date, notes)
+        }
+    }
+
+    fun deleteAccuracyLog(log: AccuracyLogEntity) {
+        viewModelScope.launch {
+            repository.deleteAccuracyLog(log)
         }
     }
 
