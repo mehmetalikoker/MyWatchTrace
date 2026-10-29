@@ -1,6 +1,5 @@
 package com.example.mywatchtrace.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,8 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,17 +54,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.mywatchtrace.R
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import com.example.mywatchtrace.ui.WatchViewModel
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
@@ -76,39 +74,27 @@ import java.util.Locale
 fun CalendarScreen(
     viewModel: WatchViewModel
 ) {
-    val allWatches by viewModel.allWatches.collectAsState()
-    
-    // Week navigation state (Monday of selected week)
-    var currentWeekStart by remember {
-        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
-    }
-
-    val weekDays = remember(currentWeekStart) {
-        (0..6).map { currentWeekStart.plusDays(it.toLong()) }
-    }
-
-    // Observe logs for the month(s) covering this week
     val selectedYearMonth by viewModel.selectedYearMonth.collectAsState()
     val wearLogsForMonth by viewModel.wearLogsForSelectedMonth.collectAsState()
-
-    // Ensure selectedYearMonth tracks currentWeekStart
-    val weekMonth = java.time.YearMonth.from(currentWeekStart)
-    if (selectedYearMonth != weekMonth) {
-        viewModel.setSelectedYearMonth(weekMonth)
-    }
-
-    val logsByDate = remember(wearLogsForMonth) {
-        wearLogsForMonth.groupBy { it.wearLog.date }
-    }
+    val allWatches by viewModel.allWatches.collectAsState()
 
     var selectedDayForBottomSheet by remember { mutableStateOf<LocalDate?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val turkishLocale = remember { Locale.Builder().setLanguage("tr").setRegion("TR").build() }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("d MMM", turkishLocale) }
-    val weekTitle = remember(currentWeekStart) {
-        val weekEnd = currentWeekStart.plusDays(6)
-        "${currentWeekStart.format(dateFormatter)} - ${weekEnd.format(dateFormatter)} ${weekEnd.year}"
+    val englishLocale = Locale.US
+    val monthYearTitle = remember(selectedYearMonth) {
+        selectedYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", englishLocale))
+    }
+
+    val totalWears = wearLogsForMonth.size
+    val uniqueWatches = wearLogsForMonth.map { it.wearLog.watchId }.toSet().size
+
+    val calendarDays = remember(selectedYearMonth) {
+        getCalendarDays(selectedYearMonth)
+    }
+
+    val logsByDate = remember(wearLogsForMonth) {
+        wearLogsForMonth.groupBy { it.wearLog.date }
     }
 
     Scaffold(
@@ -116,13 +102,13 @@ fun CalendarScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Haftalık Takvim",
+                        text = "Takvim",
                         fontWeight = FontWeight.Bold
                     )
                 },
                 actions = {
                     TextButton(onClick = {
-                        currentWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                        viewModel.setSelectedYearMonth(YearMonth.now())
                     }) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -144,193 +130,131 @@ fun CalendarScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                // Week Header & Navigation
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { currentWeekStart = currentWeekStart.minusWeeks(1) },
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                RoundedCornerShape(10.dp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { viewModel.setSelectedYearMonth(selectedYearMonth.minusMonths(1)) },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
+                                contentDescription = "Önceki Ay",
+                                modifier = Modifier.size(16.dp)
                             )
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBackIos,
-                            contentDescription = "Önceki Hafta",
-                            modifier = Modifier.size(16.dp)
-                        )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = { viewModel.setSelectedYearMonth(selectedYearMonth.plusMonths(1)) },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                contentDescription = "Sonraki Ay",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            Text(
+                                text = monthYearTitle,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "$totalWears kayıt · $uniqueWatches farklı saat",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
+                }
 
-                    Text(
-                        text = weekTitle,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    IconButton(
-                        onClick = { currentWeekStart = currentWeekStart.plusWeeks(1) },
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                RoundedCornerShape(10.dp)
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                            contentDescription = "Sonraki Hafta",
-                            modifier = Modifier.size(16.dp)
+                // Weekday headers
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val weekDays = listOf("Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz")
+                    weekDays.forEach { dayName ->
+                        Text(
+                            text = dayName,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.weight(1f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // 7 Spacious Day Cards
-                weekDays.forEach { date ->
-                    val dateString = date.toString()
-                    val dayLogs = logsByDate[dateString] ?: emptyList()
-                    val isToday = date == LocalDate.now()
-                    val dayName = date.format(DateTimeFormatter.ofPattern("EEEE", turkishLocale))
-                    val dayFormatted = date.format(DateTimeFormatter.ofPattern("d MMMM", turkishLocale))
-
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isToday)
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = if (isToday) 4.dp else 1.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedDayForBottomSheet = date }
+                // Calendar Grid (7 columns)
+                val rows = calendarDays.chunked(7)
+                rows.forEach { week ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                        week.forEach { date ->
+                            val isCurrentMonth = date.month == selectedYearMonth.month
+                            val dateString = date.toString()
+                            val dayLogs = logsByDate[dateString] ?: emptyList()
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(0.72f)
+                                    .padding(2.dp)
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(
-                                        text = dayName,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "• $dayFormatted",
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                OutlinedButton(
-                                    onClick = { selectedDayForBottomSheet = date },
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Saat Ekle / Düzenle", fontSize = 12.sp)
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            if (dayLogs.isEmpty()) {
-                                Text(
-                                    text = "Bu gün için saat kaydı yok.",
-                                    fontSize = 13.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    dayLogs.forEach { log ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(
-                                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                                    RoundedCornerShape(10.dp)
-                                                )
-                                                .padding(8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                            ) {
-                                                if (log.watch.photoUri.isNotBlank()) {
-                                                    Card(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        modifier = Modifier.size(36.dp)
-                                                    ) {
-                                                        AsyncImage(
-                                                            model = log.watch.photoUri,
-                                                            contentDescription = null,
-                                                            contentScale = ContentScale.Crop,
-                                                            modifier = Modifier.fillMaxSize()
-                                                        )
-                                                    }
-                                                } else {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(24.dp)
-                                                            .clip(CircleShape)
-                                                            .background(MaterialTheme.colorScheme.primary)
-                                                    )
-                                                }
-
-                                                Column {
-                                                    Text(
-                                                        text = "${log.watch.brand} ${log.watch.model}",
-                                                        fontSize = 15.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                    Text(
-                                                        text = log.watch.category,
-                                                        fontSize = 12.sp,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                            }
-
-                                            IconButton(
-                                                onClick = { viewModel.toggleWearLog(log.watch.id, dateString, true) },
-                                                modifier = Modifier.size(28.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Kaldır",
-                                                    tint = MaterialTheme.colorScheme.error,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                        }
+                                CalendarDayCell(
+                                    date = date,
+                                    isCurrentMonth = isCurrentMonth,
+                                    logs = dayLogs,
+                                    onClick = {
+                                        selectedDayForBottomSheet = date
                                     }
-                                }
+                                )
                             }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Bir güne tıklayarak ne taktığınızı ekleyin veya düzenleyin.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp)
+                )
             }
         }
     }
@@ -352,6 +276,82 @@ fun CalendarScreen(
                 viewModel = viewModel,
                 onDismiss = { selectedDayForBottomSheet = null }
             )
+        }
+    }
+}
+
+@Composable
+fun CalendarDayCell(
+    date: LocalDate,
+    isCurrentMonth: Boolean,
+    logs: List<WearLogWithWatch>,
+    onClick: () -> Unit
+) {
+    val isToday = date == LocalDate.now()
+
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp))
+            .border(
+                width = if (isToday) 2.dp else 1.dp,
+                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick),
+        color = if (logs.isNotEmpty() && isCurrentMonth)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+        else if (isCurrentMonth)
+            MaterialTheme.colorScheme.surface
+        else
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(3.dp)
+        ) {
+            Text(
+                text = date.dayOfMonth.toString(),
+                fontSize = 11.sp,
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                color = if (isCurrentMonth)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            if (isCurrentMonth) {
+                logs.take(2).forEach { log ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 0.5.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f))
+                            .padding(horizontal = 2.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "${log.watch.brand} ${log.watch.model}",
+                            fontSize = 7.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (logs.size > 2) {
+                    Text(
+                        text = "+${logs.size - 2}",
+                        fontSize = 7.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -490,4 +490,20 @@ fun DayDetailBottomSheetContent(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+fun getCalendarDays(yearMonth: YearMonth): List<LocalDate> {
+    val firstOfMonth = yearMonth.atDay(1)
+    val firstGridDay = firstOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+    val lastOfMonth = yearMonth.atEndOfMonth()
+    val lastGridDay = lastOfMonth.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+
+    val days = mutableListOf<LocalDate>()
+    var curr = firstGridDay
+    while (!curr.isAfter(lastGridDay)) {
+        days.add(curr)
+        curr = curr.plusDays(1)
+    }
+    return days
 }
