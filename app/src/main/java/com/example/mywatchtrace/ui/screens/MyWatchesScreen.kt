@@ -96,7 +96,7 @@ val PREDEFINED_COLORS = listOf(
     "#795548"  // Kahverengi
 )
 
-val WATCH_CATEGORIES = listOf("Diver", "Dress", "Spor", "Pilot", "Chronograph", "Field", "GMT", "Vintage")
+val WATCH_CATEGORIES = listOf("Diver", "Dress", "Sport", "Pilot", "Chronograph", "Field", "GMT", "Vintage")
 val MOVEMENT_TYPES = listOf("Otomatik", "Quartz", "Kurmalı", "Solar", "Hibrit")
 val CURRENCIES = listOf("TL", "USD", "EUR", "CHF")
 val STATUS_OPTIONS = listOf("Aktif", "Satıldı")
