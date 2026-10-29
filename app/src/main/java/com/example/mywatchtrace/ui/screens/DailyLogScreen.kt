@@ -49,9 +49,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.ui.WatchViewModel
 import java.time.Instant
@@ -311,12 +313,26 @@ fun DailyWatchItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(watchColor)
-                )
+                if (watch.photoUri.isNotBlank()) {
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        AsyncImage(
+                            model = watch.photoUri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(watchColor)
+                    )
+                }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
