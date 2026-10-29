@@ -14,10 +14,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -57,7 +59,7 @@ fun FinanceScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Finans & Portföy",
+                        text = "Finans & Ayarlar",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -90,14 +92,14 @@ fun FinanceScreen(
                 )
 
                 Text(
-                    text = "Koleksiyon Değer Özeti",
+                    text = "Koleksiyon ve Ayarlar",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
-                    text = "Aktif koleksiyonunuzun maliyet ve portföy özeti.",
+                    text = "Aktif koleksiyon maliyetiniz ve görünüm tercihiniz.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -105,6 +107,54 @@ fun FinanceScreen(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Theme Selection Card
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(imageVector = Icons.Default.BrightnessMedium, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Text(
+                                text = "Uygulama Teması",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        val currentTheme by viewModel.themeMode.collectAsState()
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = currentTheme == "System",
+                                onClick = { viewModel.setThemeMode("System") },
+                                label = { Text("Sistem") }
+                            )
+                            FilterChip(
+                                selected = currentTheme == "Dark",
+                                onClick = { viewModel.setThemeMode("Dark") },
+                                label = { Text("Koyu") }
+                            )
+                            FilterChip(
+                                selected = currentTheme == "Light",
+                                onClick = { viewModel.setThemeMode("Light") },
+                                label = { Text("Açık") }
+                            )
+                        }
+                    }
+                }
 
                 // Summary Stats Card
                 Card(

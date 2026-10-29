@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,6 +30,15 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     val topWornWatches: StateFlow<List<WatchWearCount>>
     val topWornWatchesForCurrentMonth: StateFlow<List<WatchWearCount>>
     val leastWornWatches: StateFlow<List<WatchWearCount>>
+
+    private val prefs = application.getSharedPreferences("watch_trace_prefs", android.content.Context.MODE_PRIVATE)
+    private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: String) {
+        _themeMode.value = mode
+        prefs.edit().putString("theme_mode", mode).apply()
+    }
 
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
