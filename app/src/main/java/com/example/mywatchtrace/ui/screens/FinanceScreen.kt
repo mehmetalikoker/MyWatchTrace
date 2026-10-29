@@ -22,9 +22,11 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -80,6 +83,7 @@ fun FinanceScreen(
     val watches by viewModel.allWatches.collectAsState()
     var selectedTab by remember { mutableStateOf(0) } // 0: Finans, 1: Ayarlar
     var targetCurrency by remember { mutableStateOf("TL") }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     val activeWatches = watches.filter { it.status == "Aktif" }
     val soldWatches = watches.filter { it.status == "Satıldı" }
@@ -421,6 +425,46 @@ fun FinanceScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
+                    // About & Developer Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Text(
+                                    text = "Hakkında & Geliştirici",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Text(
+                                text = "WatchTrace v1.0.0\nSaat tutkunları ve koleksiyonerler için özel olarak geliştirilmiştir.",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Button(
+                                onClick = { showAboutDialog = true },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Lisans ve Geliştirici Detayları", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
                     // Splash Image Selection Card
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -525,5 +569,48 @@ fun FinanceScreen(
                 }
             }
         }
+    }
+
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text("WatchTrace Hakkında", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Geliştirici: Mehmet Ali Köker",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "WatchTrace, saat tutkunlarının koleksiyonlarını, günlük kullanım geçmişlerini, bakım ve doğruluk ölçümlerini takip edebilmeleri için modern Jetpack Compose mimarisiyle geliştirilmiştir.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "MIT Lisansı",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Copyright (c) 2026 Mehmet Ali Köker\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files...",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAboutDialog = false }) {
+                    Text("Kapat", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
