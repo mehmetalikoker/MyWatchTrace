@@ -37,7 +37,9 @@ class MainActivity : ComponentActivity() {
                 var showSplash by remember { mutableStateOf(true) }
 
                 if (showSplash) {
+                    val splashUri by watchViewModel.splashImageUri.collectAsState()
                     SplashScreen(
+                        splashImageUri = splashUri,
                         onTimeout = { showSplash = false }
                     )
                 } else {

@@ -34,12 +34,21 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
     val leastWornWatches: StateFlow<List<WatchWearCount>>
 
     private val prefs = application.getSharedPreferences("watch_trace_prefs", android.content.Context.MODE_PRIVATE)
+    
     private val _themeMode = MutableStateFlow(prefs.getString("theme_mode", "System") ?: "System")
     val themeMode: StateFlow<String> = _themeMode.asStateFlow()
 
     fun setThemeMode(mode: String) {
         _themeMode.value = mode
         prefs.edit().putString("theme_mode", mode).apply()
+    }
+
+    private val _splashImageUri = MutableStateFlow(prefs.getString("splash_image", "") ?: "")
+    val splashImageUri: StateFlow<String> = _splashImageUri.asStateFlow()
+
+    fun setSplashImage(uri: String) {
+        _splashImageUri.value = uri
+        prefs.edit().putString("splash_image", uri).apply()
     }
 
     private val _selectedDate = MutableStateFlow(LocalDate.now().toString())
@@ -146,7 +155,7 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
                     currency = currency,
                     status = status,
                     soldPrice = soldPrice.trim(),
-                    soldCurrency = soldCurrency,
+                    soldCurrency = soldCurrency.trim(),
                     soldDate = soldDate.trim(),
                     soldTo = soldTo.trim()
                 )
@@ -200,7 +209,7 @@ class WatchViewModel(application: Application) : AndroidViewModel(application) {
                     currency = currency,
                     status = status,
                     soldPrice = soldPrice.trim(),
-                    soldCurrency = soldCurrency,
+                    soldCurrency = soldCurrency.trim(),
                     soldDate = soldDate.trim(),
                     soldTo = soldTo.trim()
                 )

@@ -12,17 +12,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import kotlinx.coroutines.delay
 
-// Buraya ileride yeni ekleyeceğiniz resimleri de ekleyebilirsiniz:
-// Örn: R.drawable.img2, R.drawable.img3 vb.
 val SPLASH_IMAGES = listOf(
-    R.drawable.img
+    R.drawable.img,
+    R.drawable.img2
 )
 
 @Composable
 fun SplashScreen(
+    splashImageUri: String,
     onTimeout: () -> Unit
 ) {
     val randomImageRes = remember {
@@ -44,11 +45,20 @@ fun SplashScreen(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = randomImageRes),
-            contentDescription = "Açılış Görseli",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        if (splashImageUri.isNotBlank()) {
+            AsyncImage(
+                model = splashImageUri,
+                contentDescription = "Özel Açılış Görseli",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Image(
+                painter = painterResource(id = randomImageRes),
+                contentDescription = "Açılış Görseli",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
     }
 }

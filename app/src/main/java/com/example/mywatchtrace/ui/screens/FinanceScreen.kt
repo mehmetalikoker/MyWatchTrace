@@ -1,5 +1,8 @@
 package com.example.mywatchtrace.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,12 +19,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -31,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +48,7 @@ import com.example.mywatchtrace.ui.WatchViewModel
 fun FinanceScreen(
     viewModel: WatchViewModel
 ) {
+    val context = LocalContext.current
     val watches by viewModel.allWatches.collectAsState()
 
     val activeWatches = watches.filter { it.status == "Aktif" }
@@ -53,6 +61,16 @@ fun FinanceScreen(
 
     val totalActiveCount = activeWatches.size
     val totalSoldCount = soldWatches.size
+
+    val splashPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val internalPath = saveUriToInternalStorage(context, uri)
+            viewModel.setSplashImage(internalPath)
+        }
+    }
+    val currentSplashUri by viewModel.splashImageUri.collectAsState()
 
     Scaffold(
         topBar = {
@@ -107,6 +125,60 @@ fun FinanceScreen(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Splash Image Selection Card
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(imageVector = Icons.Default.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Text(
+                                text = "Açılış Ekranı Görseli",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Text(
+                            text = "Uygulama açılışında gösterilecek özel görseli seçebilir veya rastgele varsayılan görsellere dönebilirsiniz.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = { splashPickerLauncher.launch("image/*") },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Görsel Seç")
+                            }
+
+                            if (currentSplashUri.isNotBlank()) {
+                                OutlinedButton(
+                                    onClick = { viewModel.setSplashImage("") },
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Varsayılan Yap")
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Theme Selection Card
                 Card(
