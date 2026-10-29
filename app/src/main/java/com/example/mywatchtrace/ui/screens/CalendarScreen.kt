@@ -18,32 +18,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,13 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.example.mywatchtrace.data.entity.WatchEntity
 import com.example.mywatchtrace.data.entity.WearLogWithWatch
 import com.example.mywatchtrace.ui.WatchViewModel
 import java.time.DayOfWeek
@@ -76,10 +66,8 @@ fun CalendarScreen(
 ) {
     val selectedYearMonth by viewModel.selectedYearMonth.collectAsState()
     val wearLogsForMonth by viewModel.wearLogsForSelectedMonth.collectAsState()
-    val allWatches by viewModel.allWatches.collectAsState()
 
-    var selectedDayForBottomSheet by remember { mutableStateOf<LocalDate?>(null) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedDayForDialog by remember { mutableStateOf<LocalDate?>(null) }
 
     val englishLocale = Locale.US
     val monthYearTitle = remember(selectedYearMonth) {
@@ -237,46 +225,73 @@ fun CalendarScreen(
                                     isCurrentMonth = isCurrentMonth,
                                     logs = dayLogs,
                                     onClick = {
-                                        selectedDayForBottomSheet = date
+                                        selectedDayForDialog = date
                                     }
                                 )
                             }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Bir güne tıklayarak ne taktığınızı ekleyin veya düzenleyin.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(vertical = 8.dp)
-                )
             }
         }
     }
 
-    selectedDayForBottomSheet?.let { date ->
+    selectedDayForDialog?.let { date ->
         val dateString = date.toString()
         val wearLogsForDate = remember(wearLogsForMonth, dateString) {
             wearLogsForMonth.filter { it.wearLog.date == dateString }
         }
 
-        ModalBottomSheet(
-            onDismissRequest = { selectedDayForBottomSheet = null },
-            sheetState = sheetState
-        ) {
-            DayDetailBottomSheetContent(
-                date = date,
-                allWatches = allWatches,
-                wearLogsForDate = wearLogsForDate,
-                viewModel = viewModel,
-                onDismiss = { selectedDayForBottomSheet = null }
-            )
-        }
+        val turkishLocale = remember { Locale.Builder().setLanguage("tr").setRegion("TR").build() }
+        val formattedTitle = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy, EEEE", turkishLocale))
+
+        AlertDialog(
+            onDismissRequest = { selectedDayForDialog = null },
+            title = { Text(formattedTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                if (wearLogsForDate.isEmpty()) {
+                    Text(
+                        text = "Bu güne ait saat takılma kaydı bulunmuyor.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Bu tarihte takılan saat(ler):",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                        wearLogsForDate.forEach { log ->
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "• ${log.watch.brand} ${log.watch.model}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedDayForDialog = null }) {
+                    Text("Kapat", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }
 
@@ -356,151 +371,15 @@ fun CalendarDayCell(
     }
 }
 
-@Composable
-fun DayDetailBottomSheetContent(
-    date: LocalDate,
-    allWatches: List<WatchEntity>,
-    wearLogsForDate: List<WearLogWithWatch>,
-    viewModel: WatchViewModel,
-    onDismiss: () -> Unit
-) {
-    val dateString = date.toString()
-    val wornWatchIds = remember(wearLogsForDate) {
-        wearLogsForDate.map { it.wearLog.watchId }.toSet()
-    }
-
-    val turkishLocale = remember { Locale.Builder().setLanguage("tr").setRegion("TR").build() }
-    val formattedTitle = date.format(DateTimeFormatter.ofPattern("d MMMM yyyy, EEEE", turkishLocale))
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-    ) {
-        Text(
-            text = formattedTitle,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Bu tarihte taktığınız saatleri seçin:",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        if (allWatches.isEmpty()) {
-            Text(
-                text = "Kayıtlı saatiniz yok. Saatlerim sayfasından saat ekleyebilirsiniz.",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(allWatches, key = { it.id }) { watch ->
-                    val isWorn = wornWatchIds.contains(watch.id)
-
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isWorn)
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (watch.photoUri.isNotBlank()) {
-                                    Card(
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        AsyncImage(
-                                            model = watch.photoUri,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    }
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primary)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "${watch.brand} ${watch.model}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
-                            }
-
-                            if (isWorn) {
-                                Button(
-                                    onClick = { viewModel.toggleWearLog(watch.id, dateString, true) },
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                                ) {
-                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Takıldı")
-                                }
-                            } else {
-                                OutlinedButton(
-                                    onClick = { viewModel.toggleWearLog(watch.id, dateString, false) },
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Ekle")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text("Tamam")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
 fun getCalendarDays(yearMonth: YearMonth): List<LocalDate> {
     val firstOfMonth = yearMonth.atDay(1)
-    val firstGridDay = firstOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val firstGridGridDay = firstOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
     val lastOfMonth = yearMonth.atEndOfMonth()
     val lastGridDay = lastOfMonth.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
 
     val days = mutableListOf<LocalDate>()
-    var curr = firstGridDay
+    var curr = firstGridGridDay
     while (!curr.isAfter(lastGridDay)) {
         days.add(curr)
         curr = curr.plusDays(1)
