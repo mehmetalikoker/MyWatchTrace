@@ -103,6 +103,8 @@ fun FinanceScreen(
         convertToCurrency(amount, watch.soldCurrency.ifBlank { "TL" }, targetCurrency)
     }
 
+    val grandTotalUnified = totalActiveCostUnified + totalSoldRevenueUnified
+
     // Group active investments by currency for original breakdown
     val activeInvestments = activeWatches
         .groupBy { it.currency.ifBlank { "TL" } }
@@ -252,7 +254,7 @@ fun FinanceScreen(
                         }
                     }
 
-                    // Unified Total Portfolio Card
+                    // Grand Total Portfolio Card
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
@@ -264,7 +266,7 @@ fun FinanceScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
                                 text = "Toplam Portföy Değeri ($targetCurrency)",
@@ -273,16 +275,44 @@ fun FinanceScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "%.2f %s".format(totalActiveCostUnified, targetCurrency),
-                                fontSize = 26.sp,
+                                text = "%.2f %s".format(grandTotalUnified, targetCurrency),
+                                fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            if (totalSoldRevenueUnified > 0) {
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
                                 Text(
-                                    text = "Satış Gelirleri Toplamı: %.2f %s".format(totalSoldRevenueUnified, targetCurrency),
+                                    text = "• Aktif Portföy Değeri:",
                                     fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "%.2f %s".format(totalActiveCostUnified, targetCurrency),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "• Satılan Saat Gelirleri:",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "%.2f %s".format(totalSoldRevenueUnified, targetCurrency),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
