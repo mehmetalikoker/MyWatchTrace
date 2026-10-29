@@ -583,6 +583,7 @@ fun DetailedWatchCard(
 ) {
     val watchColor = parseHexColor(watch.colorHex)
     val isSold = watch.status == "Satıldı"
+    var isNameExpanded by remember { mutableStateOf(false) }
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -647,8 +648,9 @@ fun DetailedWatchCard(
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = if (isNameExpanded) Int.MAX_VALUE else 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable { isNameExpanded = !isNameExpanded }
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
