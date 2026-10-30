@@ -69,6 +69,8 @@ fun DailyLogScreen(
     onNavigateToMyWatches: () -> Unit = {}
 ) {
     val watches by viewModel.allWatches.collectAsState()
+    val activeWatches = remember(watches) { watches.filter { it.status == "Aktif" } }
+
     val selectedDateString by viewModel.selectedDate.collectAsState()
     val wearLogsForDate by viewModel.wearLogsForSelectedDate.collectAsState()
 
@@ -199,7 +201,7 @@ fun DailyLogScreen(
                 )
             }
 
-            if (watches.isEmpty()) {
+            if (activeWatches.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -215,7 +217,7 @@ fun DailyLogScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Henüz kayıtlı saat bulunmuyor",
+                        text = "Henüz aktif kayıtlı saat bulunmuyor",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -234,7 +236,7 @@ fun DailyLogScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(watches, key = { it.id }) { watch ->
+                    items(activeWatches, key = { it.id }) { watch ->
                         val isWorn = wornWatchIds.contains(watch.id)
                         DailyWatchItemCard(
                             watch = watch,
