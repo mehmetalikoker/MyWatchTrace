@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import com.example.mywatchtrace.R
 import kotlinx.coroutines.delay
+import java.io.File
 
 val SPLASH_IMAGES = listOf(
     R.drawable.img,
@@ -46,8 +47,11 @@ fun SplashScreen(
         contentAlignment = Alignment.Center
     ) {
         if (splashImageUri.isNotBlank()) {
+            val model = remember(splashImageUri) {
+                if (splashImageUri.startsWith("/")) File(splashImageUri) else splashImageUri
+            }
             AsyncImage(
-                model = splashImageUri,
+                model = model,
                 contentDescription = "Özel Açılış Görseli",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
