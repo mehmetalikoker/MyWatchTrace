@@ -54,7 +54,8 @@ fun SplashScreen(
                 model = model,
                 contentDescription = "Özel Açılış Görseli",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                error = painterResource(id = randomImageRes)
             )
         } else {
             Image(

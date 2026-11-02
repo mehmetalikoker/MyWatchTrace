@@ -1,6 +1,10 @@
 package com.example.mywatchtrace.ui.screens
 
 import android.net.Uri
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -118,8 +122,13 @@ fun FinanceScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
+            val oldPath = viewModel.splashImageUri.value
             val internalPath = saveUriToInternalStorage(context, uri)
             viewModel.setSplashImage(internalPath)
+            // Eski özel görsel dosyasını sil (yer kaplamasın)
+            if (oldPath.startsWith("/") && oldPath != internalPath) {
+                runCatching { File(oldPath).delete() }
+            }
         }
     }
     val currentSplashUri by viewModel.splashImageUri.collectAsState()
@@ -524,6 +533,18 @@ fun FinanceScreen(
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+
+                            if (currentSplashUri.isNotBlank()) {
+                                AsyncImage(
+                                    model = if (currentSplashUri.startsWith("/")) File(currentSplashUri) else currentSplashUri,
+                                    contentDescription = "Seçili açılış görseli",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(160.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                )
+                            }
 
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
